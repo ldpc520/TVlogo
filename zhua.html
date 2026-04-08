@@ -532,50 +532,36 @@
         async function findFavicon(siteUrl) {
             try {
                 const url = new URL(siteUrl);
+                const domain = url.hostname;
                 const origin = url.origin;
 
-                // 策略1: 直接尝试常见的favicon路径
-                const commonPaths = [
-                    '/favicon.ico',
-                    '/apple-touch-icon.png',
-                    '/apple-touch-icon-precomposed.png',
-                    '/favicon.svg',
-                    '/favicon.png',
-                    '/assets/favicon.ico',
-                    '/images/favicon.ico',
-                    '/static/favicon.ico',
-                    '/public/favicon.ico'
+                // API优先级：国内友好 > 备选方案 > 网站根目录
+                const apis = [
+                    // 1. favicon.im - 主要使用（国内友好）
+                    `https://favicon.im/${domain}`,
+                    // 2. clearbit.com - 备选方案
+                    `https://logo.clearbit.com/${domain}`,
+                    // 3. iconshog.com - 备选方案
+                    `https://icons.aliyun.com/favicon.ico?domain=${domain}`,
+                    // 4. DuckDuckGo - 备选方案
+                    `https://icons.duckduckgo.com/ip3/${domain}.ico`
                 ];
 
-                // 先测试最可能的 favicon.ico
-                const testUrl = origin + '/favicon.ico';
-                const exists = await checkFaviconExists(testUrl);
-                if (exists) {
-                    return testUrl;
-                }
-
-                // 尝试其他常见路径
-                for (const path of commonPaths.slice(1)) {
-                    const testPath = origin + path;
-                    const existsPath = await checkFaviconExists(testPath);
-                    if (existsPath) {
-                        return testPath;
+                // 依次尝试 API，返回第一个有效的
+                for (const apiUrl of apis) {
+                    if (await checkFaviconExists(apiUrl)) {
+                        return apiUrl;
                     }
                 }
 
-                // 策略2: 尝试 Google Favicon API (作为后备)
-                const domain = url.hostname;
-                const googleApiUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
-
-                // 检查 Google API 是否可用
-                const googleExists = await checkFaviconExists(googleApiUrl);
-                if (googleExists) {
-                    return googleApiUrl;
+                // 5. 最终备选：网站根目录 favicon.ico
+                const rootFavicon = origin + '/favicon.ico';
+                if (await checkFaviconExists(rootFavicon)) {
+                    return rootFavicon;
                 }
 
-                // 策略3: DuckDuckGo Favicon API
-                const ddgApiUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-                return ddgApiUrl;
+                // 如果所有API都失败，返回 favicon.im 作为兜底（通常会有默认图标）
+                return `https://favicon.im/${domain}`;
 
             } catch (e) {
                 console.error('Error finding favicon:', e);
