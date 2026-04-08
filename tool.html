@@ -68,6 +68,55 @@
             pointer-events: none;
         }
 
+        .icon-input-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-input-wrapper input {
+            flex: 1;
+        }
+
+        .btn-fetch-icon {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 16px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-fetch-icon:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px -3px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-fetch-icon:active {
+            transform: translateY(0);
+        }
+
+        .btn-fetch-icon:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-fetch-icon.loading svg {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -396,7 +445,17 @@
 
             <div class="form-group">
                 <label>图标地址</label>
-                <input type="url" id="icon" placeholder="https://example.com/favicon.ico">
+                <div class="icon-input-wrapper">
+                    <input type="url" id="icon" placeholder="https://example.com/favicon.ico">
+                    <button type="button" class="btn-fetch-icon" onclick="fetchFavicon()" id="fetchIconBtn" title="从网址获取图标">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M2 12h20"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        <span>获取图标</span>
+                    </button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -567,6 +626,77 @@
             setTimeout(() => {
                 toast.classList.remove('show');
             }, 2000);
+        }
+
+        async function fetchFavicon() {
+            const urlInput = document.getElementById('url').value.trim();
+            const iconInput = document.getElementById('icon');
+            const fetchBtn = document.getElementById('fetchIconBtn');
+
+            if (!urlInput) {
+                showToast('请先填写网站地址', '#ef4444');
+                return;
+            }
+
+            // 提取域名
+            let domain;
+            try {
+                const urlObj = new URL(urlInput);
+                domain = urlObj.hostname;
+            } catch {
+                showToast('请输入有效的网址', '#ef4444');
+                return;
+            }
+
+            // 禁用按钮并显示加载状态
+            fetchBtn.disabled = true;
+            fetchBtn.classList.add('loading');
+            const originalText = fetchBtn.querySelector('span').textContent;
+            fetchBtn.querySelector('span').textContent = '获取中...';
+
+            // 尝试多个 favicon API (国内可访问的)
+            const faviconApis = [
+                `https://favicon.im/${domain}`,
+                `https://logo.clearbit.com/${domain}`,
+                `https://www.iconshog.com/favicon/${domain}`
+            ];
+
+            // 先尝试 favicon.im (国内友好)
+            try {
+                const img = new Image();
+                
+                const tryNextApi = (apiIndex) => {
+                    if (apiIndex >= faviconApis.length) {
+                        // 所有 API 都失败，尝试直接获取网站的 favicon.ico
+                        const directFavicon = `${window.location.protocol}//${domain}/favicon.ico`;
+                        iconInput.value = directFavicon;
+                        fetchBtn.disabled = false;
+                        fetchBtn.classList.remove('loading');
+                        fetchBtn.querySelector('span').textContent = originalText;
+                        showToast('已使用网站默认图标');
+                        return;
+                    }
+                    
+                    img.onload = () => {
+                        iconInput.value = faviconApis[apiIndex];
+                        fetchBtn.disabled = false;
+                        fetchBtn.classList.remove('loading');
+                        fetchBtn.querySelector('span').textContent = originalText;
+                        showToast('图标获取成功！');
+                    };
+                    img.onerror = () => {
+                        tryNextApi(apiIndex + 1);
+                    };
+                    img.src = faviconApis[apiIndex];
+                };
+                
+                tryNextApi(0);
+            } catch {
+                fetchBtn.disabled = false;
+                fetchBtn.classList.remove('loading');
+                fetchBtn.querySelector('span').textContent = originalText;
+                showToast('获取图标失败', '#ef4444');
+            }
         }
     </script>
 </body>
