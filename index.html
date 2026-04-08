@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导航主页</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-gradient-start: #667eea;
+            --bg-gradient-end: #764ba2;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --accent: #ffd700;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            background-attachment: fixed;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* 动态背景粒子 */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 头部标题 */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* 搜索框 */
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 16px 24px 16px 54px;
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-box::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-box:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+            transform: scale(1.02);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        /* 分类标签 */
+        .category-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .category-tab {
+            padding: 10px 24px;
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .category-tab:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .category-tab.active {
+            background: var(--accent);
+            color: #333;
+            border-color: var(--accent);
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        /* 网站卡片网格 */
+        .sites-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .sites-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .sites-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .sites-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 20px 15px;
+            }
+        }
+
+        /* 网站卡片 */
+        .site-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .site-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .site-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2),
+                        0 0 30px rgba(255, 215, 0, 0.15);
+        }
+
+        .site-card:hover::before {
+            opacity: 1;
+        }
+
+        .site-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            border-radius: 14px;
+            object-fit: contain;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .site-card:hover .site-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .site-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .site-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 无结果提示 */
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .no-results svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .site-card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+    </style>
+</head>
+<body>
+    <!-- 动态背景粒子 -->
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <h1>导航主页</h1>
+            <p>快速访问您喜爱的网站</p>
+        </header>
+
+        <!-- 搜索框 -->
+        <div class="search-container">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input type="text" class="search-box" id="searchInput" placeholder="搜索网站...">
+        </div>
+
+        <!-- 分类标签 -->
+        <div class="category-tabs" id="categoryTabs">
+            <button class="category-tab active" data-category="all">全部</button>
+        </div>
+
+        <!-- 网站卡片网格 -->
+        <div class="sites-grid" id="sitesGrid"></div>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            <p>© 2026 导航主页 · 使用 <a href="#">❤️</a> 制作</p>
+        </footer>
+    </div>
+
+    <script>
+        // 网站数据 - 支持多种图标格式
+        const sites = [
+            {
+                name: "网页导航Tool",
+                url: "https://dh.527200.xyz/tool.html",
+                icon: "https://img.icons8.com/?size=100&id=21194&format=png&color=000000",
+                category: "飞牛",
+                description: "网页快捷方式生成器"
+            },
+            {
+                name: "Lucky",
+                url: "https://lucky.527200.xyz",
+                icon: "https://lucky666.cn/666.svg",
+                category: "飞牛",
+                description: "DDNS解析及内网穿透"
+            },
+            {
+                name: "OmnIbox",
+                url: "https://ibox.527200.xyz",
+                icon: "https://ibox.527200.xyz/favicon.ico",
+                category: "飞牛",
+                description: "影视"
+            },
+            {
+                name: "OpenList",
+                url: "https://alist.527200.xyz",
+                icon: "https://alist.527200.xyz/favicon.ico",
+                category: "飞牛",
+                description: "个人网盘聚合"
+            },
+            {
+                name: "PanSou",
+                url: "https://pansou.527200.xyz",
+                icon: "https://pansou.527200.xyz/favicon.ico",
+                category: "飞牛",
+                description: "网盘搜索"
+            },
+            {
+                name: "百度",
+                url: "https://www.baidu.com",
+                icon: "https://www.baidu.com/favicon.ico",
+                category: "搜索",
+                description: "中文搜索引��"
+            },
+            {
+                name: "Bing",
+                url: "https://www.bing.com",
+                icon: "https://www.bing.com/favicon.ico",
+                category: "搜索",
+                description: "微软搜索引擎"
+            },
+            {
+                name: "GitHub",
+                url: "https://github.com",
+                icon: "https://github.githubassets.com/favicons/favicon.svg",
+                category: "开发",
+                description: "代码托管平台"
+            },
+            {
+                name: "Stack Overflow",
+                url: "https://stackoverflow.com",
+                icon: "https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico",
+                category: "开发",
+                description: "程序员问答社区"
+            },
+            {
+                name: "MDN Web Docs",
+                url: "https://developer.mozilla.org",
+                icon: "https://developer.mozilla.org/favicon.ico",
+                category: "开发",
+                description: "Web开发文档"
+            },
+            {
+                name: "Vue.js",
+                url: "https://vuejs.org",
+                icon: "https://vuejs.org/logo.svg",
+                category: "开发",
+                description: "渐进式JavaScript框架"
+            },
+            {
+                name: "React",
+                url: "https://react.dev",
+                icon: "https://react.dev/favicon.ico",
+                category: "开发",
+                description: "用于构建用户界面的JavaScript库"
+            },
+            {
+                name: "哔哩哔哩",
+                url: "https://www.bilibili.com",
+                icon: "https://www.bilibili.com/favicon.ico",
+                category: "视频",
+                description: "国内知名视频弹幕网站"
+            },
+            {
+                name: "YouTube",
+                url: "https://www.youtube.com",
+                icon: "https://www.youtube.com/s/desktop/favicon.ico",
+                category: "视频",
+                description: "全球最大视频平台"
+            },
+            {
+                name: "抖音",
+                url: "https://www.douyin.com",
+                icon: "https://lf1-cdn-tos.bytegoofy.com/goofy/ies/douyin_web/public/favicon.ico",
+                category: "视频",
+                description: "短视频分享平台"
+            },
+            {
+                name: "微博",
+                url: "https://weibo.com",
+                icon: "https://weibo.com/favicon.ico",
+                category: "社交",
+                description: "中国社交媒体平台"
+            },
+            {
+                name: "Twitter/X",
+                url: "https://x.com",
+                icon: "https://x.com/favicon.ico",
+                category: "社交",
+                description: "国际社交媒体平台"
+            },
+            {
+                name: "知乎",
+                url: "https://www.zhihu.com",
+                icon: "https://static.zhihu.com/heifetz/favicon.ico",
+                category: "社交",
+                description: "中文问答社区"
+            },
+            {
+                name: "掘金",
+                url: "https://juejin.cn",
+                icon: "https://juejin.cn/favicon.ico",
+                category: "开发",
+                description: "程序员技术社区"
+            },
+            {
+                name: "语雀",
+                url: "https://www.yuque.com",
+                icon: "https://www.yuque.com/favicon.ico",
+                category: "工具",
+                description: "云端知识库"
+            },
+            {
+                name: "Notion",
+                url: "https://www.notion.so",
+                icon: "https://www.notion.so/images/favicon.ico",
+                category: "工具",
+                description: "在线文档协作工具"
+            },
+            {
+                name: "Figma",
+                url: "https://www.figma.com",
+                icon: "https://static.figma.com/app/icon/1/favicon.ico",
+                category: "设计",
+                description: "在线协作设计工具"
+            },
+            {
+                name: "花瓣网",
+                url: "https://huaban.com",
+                icon: "https://huaban.com/img/favicon.ico",
+                category: "设计",
+                description: "设计师灵感社区"
+            },
+            {
+                name: "Behance",
+                url: "https://www.behance.net",
+                icon: "https://a5.behance.net/2afb957981bad6f6e0b8ea909e23b6f2654f0dd9/img/favicon/apple-touch-icon.png",
+                category: "设计",
+                description: "Adobe设计社区"
+            },
+            {
+                name: "淘宝",
+                url: "https://www.taobao.com",
+                icon: "https://img.alicdn.com/tfs/TB1XlF3RpXXXXc6XXXXXXXXXXXX-16-16.png",
+                category: "购物",
+                description: "综合购物平台"
+            },
+            {
+                name: "京东",
+                url: "https://www.jd.com",
+                icon: "https://www.jd.com/favicon.ico",
+                category: "购物",
+                description: "品质购物网站"
+            },
+            {
+                name: "拼多多",
+                url: "https://www.pinduoduo.com",
+                icon: "https://pinduoduo.com/favicon.ico",
+                category: "购物",
+                description: "拼团购物平台"
+            },
+            {
+                name: "网易云音乐",
+                url: "https://music.163.com",
+                icon: "https://s1.music.126.net/style/favicon.ico",
+                category: "音乐",
+                description: "在线音乐平台"
+            },
+            {
+                name: "Spotify",
+                url: "https://www.spotify.com",
+                icon: "https://open.spotifycdn.com/cdn/images/favicon.0f31a2b9.png",
+                category: "音乐",
+                description: "全球音乐流媒体"
+            },
+            {
+                name: "阿里云",
+                url: "https://www.aliyun.com",
+                icon: "https://www.aliyun.com/favicon.ico",
+                category: "云服务",
+                description: "云计算服务平台"
+            },
+            {
+                name: "腾讯云",
+                url: "https://cloud.tencent.com",
+                icon: "https://cloud.tencent.com/favicon.ico",
+                category: "云服务",
+                description: "云服务器及服务"
+            },
+            {
+                name: "AWS",
+                url: "https://aws.amazon.com",
+                icon: "https://aws.amazon.com/favicon.ico",
+                category: "云服务",
+                description: "亚马逊云服务"
+            },
+            {
+                name: "Steam",
+                url: "https://store.steampowered.com",
+                icon: "https://store.steampowered.com/favicon.ico",
+                category: "游戏",
+                description: "游戏平台"
+            },
+            {
+                name: "ChatGPT",
+                url: "https://chat.openai.com",
+                icon: "https://chat.openai.com/favicon.ico",
+                category: "AI",
+                description: "AI对话助手"
+            },
+            {
+                name: "Claude",
+                url: "https://claude.ai",
+                icon: "https://claude.ai/favicon.ico",
+                category: "AI",
+                description: "Anthropic AI助手"
+            },
+            {
+                name: "Kimi",
+                url: "https://kimi.moonshot.cn",
+                icon: "https://kimi.moonshot.cn/favicon.ico",
+                category: "AI",
+                description: "月之暗面AI助手"
+            },
+            {
+                name: "DeepSeek",
+                url: "https://www.deepseek.com",
+                icon: "https://www.deepseek.com/favicon.ico",
+                category: "AI",
+                description: "深度求索AI"
+            }
+        ];
+
+        // 生成粒子背景
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // 获取所有分类
+        function getCategories() {
+            const categories = [...new Set(sites.map(site => site.category))];
+            return categories.sort();
+        }
+
+        // 渲染分类标签
+        function renderCategories() {
+            const container = document.getElementById('categoryTabs');
+            const categories = getCategories();
+            
+            categories.forEach(category => {
+                const tab = document.createElement('button');
+                tab.className = 'category-tab';
+                tab.dataset.category = category;
+                tab.textContent = category;
+                container.appendChild(tab);
+            });
+        }
+
+        // 渲染网站卡片
+        function renderSites(filter = 'all', search = '') {
+            const container = document.getElementById('sitesGrid');
+            container.innerHTML = '';
+
+            let filteredSites = sites;
+            
+            // 分类筛选
+            if (filter !== 'all') {
+                filteredSites = filteredSites.filter(site => site.category === filter);
+            }
+
+            // 搜索过滤
+            if (search) {
+                const searchLower = search.toLowerCase();
+                filteredSites = filteredSites.filter(site => 
+                    site.name.toLowerCase().includes(searchLower) ||
+                    site.description.toLowerCase().includes(searchLower) ||
+                    site.category.toLowerCase().includes(searchLower)
+                );
+            }
+
+            if (filteredSites.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                            <path d="M8 8l6 6M14 8l-6 6"/>
+                        </svg>
+                        <p>没有找到匹配的网站</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredSites.forEach((site, index) => {
+                const card = document.createElement('a');
+                card.className = 'site-card';
+                card.href = site.url;
+                card.target = '_blank';
+                card.rel = 'noopener noreferrer';
+                card.style.animationDelay = `${index * 0.05}s`;
+                
+                card.innerHTML = `
+                    <img class="site-icon" src="${site.icon}" alt="${site.name}" 
+                         onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🔗</text></svg>'">
+                    <div class="site-name">${site.name}</div>
+                    <div class="site-desc">${site.description}</div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // 事件监听
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            renderCategories();
+            renderSites();
+
+            // 搜索输入
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                const activeCategory = document.querySelector('.category-tab.active').dataset.category;
+                renderSites(activeCategory, e.target.value);
+            });
+
+            // 分类切换
+            const categoryTabs = document.getElementById('categoryTabs');
+            categoryTabs.addEventListener('click', (e) => {
+                if (e.target.classList.contains('category-tab')) {
+                    // 移除所有 active
+                    document.querySelectorAll('.category-tab').forEach(tab => {
+                        tab.classList.remove('active');
+                    });
+                    // 添加 active
+                    e.target.classList.add('active');
+                    // 重新渲染
+                    renderSites(e.target.dataset.category, searchInput.value);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
