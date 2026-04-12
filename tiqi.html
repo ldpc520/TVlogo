@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网页内容提取工具 - 本地版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+        
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+        
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result-container {
+            max-height: 500px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            margin-top: 20px;
+        }
+        
+        .result-line {
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            background-color: white;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .result-line:last-child {
+            margin-bottom: 0;
+        }
+        
+        .result-stats {
+            margin-top: 15px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .examples h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .examples ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .examples li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+        
+        .examples li:before {
+            content: "✓";
+            color: #3498db;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        
+        .method-description {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .step-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .step-list h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .step {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .step-num {
+            background: #3498db;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        
+        .tip {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 网页内容提取工具 - 无CORS限制版</h1>
+            <p class="subtitle">无需担心CORS安全限制，多种方式提取网页内容</p>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('method1')">方法一：手动粘贴</button>
+            <button class="tab-btn" onclick="switchTab('method2')">方法二：浏览器扩展</button>
+            <button class="tab-btn" onclick="switchTab('method3')">方法三：本地代理</button>
+        </div>
+        
+        <!-- 方法一：手动粘贴 -->
+        <div id="method1" class="tab-content active">
+            <h2>📋 方法一：手动粘贴网页内容</h2>
+            <p class="method-description">这是最简单且完全无CORS限制的方法。您只需要从浏览器手动复制网页内容，然后粘贴到这里进行提取。</p>
+            
+            <div class="step-list">
+                <h4>操作步骤：</h4>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div>打开您要提取内容的网页（如您之前提到的那个URL）</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div>按 Ctrl+A (Windows) 或 Cmd+A (Mac) 全选页面内容</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div>按 Ctrl+C (Windows) 或 Cmd+C (Mac) 复制内容</div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div>将内容粘贴到下面的文本框中</div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="pastedContent">粘贴网页内容：</label>
+                <textarea id="pastedContent" rows="10" placeholder="在这里粘贴您从网页复制的全部内容..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="searchText1">要搜索的内容：</label>
+                <input type="text" id="searchText1" placeholder="例如: 157.0.89.207:9003 或 CCTV1" value="157.0.89.207:9003">
+            </div>
+            
+            <div class="form-group">
+                <label>快捷搜索：</label>
+                <div class="btn-group">
+                    <button type="button" class="btn-secondary" onclick="setSearchText1('157.0.89.207:9003')">157.0.89.207:9003</button>
+                    <button type="button" class="btn-secondary" onclick="setSearchText1('180.118.187.202:60001')">180.118.187.202:60001</button>
+                    <button type="button" class="btn-secondary" onclick="setSearchText1('CCTV1')">CCTV1</button>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button type="button" class="btn-primary" onclick="extractFromPaste()">🎯 开始提取</button>
+                <button type="button" class="btn-secondary" onclick="clearAll()">🗑️ 清空所有</button>
+            </div>
+            
+            <div id="status1" class="status"></div>
+        </div>
+        
+        <!-- 方法二：浏览器扩展 -->
+        <div id="method2" class="tab-content">
+            <h2>🔧 方法二：使用浏览器扩展绕过CORS</h2>
+            <p class="method-description">安装浏览器扩展程序，一劳永逸地解决CORS问题。这需要您安装一个浏览器扩展，但之后可以自动处理CORS限制。</p>
+            
+            <div class="tip">
+                <strong>💡 推荐扩展：</strong>
+                <p>以下是各浏览器可用的CORS扩展，安装后启用即可：</p>
+            </div>
+            
+            <div class="examples">
+                <h3>🌐 Chrome/Edge浏览器：</h3>
+                <ul>
+                    <li><strong>Allow CORS: Access-Control-Allow-Origin</strong> - 最受欢迎的CORS扩展</li>
+                    <li><strong>Moesif CORS</strong> - 轻量级，简单易用</li>
+                    <li><strong>CORS Unblock</strong> - 功能全面，支持自定义</li>
+                </ul>
+                
+                <h3>🦊 Firefox浏览器：</h3>
+                <ul>
+                    <li><strong>CORS Everywhere</strong> - Firefox专用，效果很好</li>
+                    <li><strong>Allow CORS Access-Control-Allow-Origin</strong> - 也有Firefox版本</li>
+                </ul>
+            </div>
+            
+            <div class="form-group">
+                <label for="directUrl">网页地址 (安装扩展后可直接使用)：</label>
+                <input type="text" id="directUrl" placeholder="https://..." value="https://spider.v4.527200.xyz:6987/sub?5JfzkwPf=txt">
+            </div>
+            
+            <div class="form-group">
+                <label for="searchText2">要搜索的内容：</label>
+                <input type="text" id="searchText2" placeholder="例如: 157.0.89.207:9003" value="157.0.89.207:9003">
+            </div>
+            
+            <div class="btn-group">
+                <button type="button" class="btn-primary" onclick="fetchWithExtension()">🌐 直接获取（需扩展）</button>
+            </div>
+            
+            <div id="status2" class="status">安装CORS扩展后，点击按钮即可直接获取网页内容</div>
+        </div>
+        
+        <!-- 方法三：本地代理 -->
+        <div id="method3" class="tab-content">
+            <h2>⚙️ 方法三：使用本地代理工具</h2>
+            <p class="method-description">这是最专业的方法，通过在本地运行一个简单的代理服务器来绕过CORS限制。适合有一定技术基础的用户。</p>
+            
+            <div class="examples">
+                <h3>📁 最简单的本地代理方案：</h3>
+                <p>创建一个名为 <code>proxy.html</code> 的文件，内容如下：</p>
+                <div class="result-container" style="font-size: 12px;">
+&lt;!DOCTYPE html&gt;<br>
+&lt;html&gt;<br>
+&lt;head&gt;<br>
+&lt;meta charset="UTF-8"&gt;<br>
+&lt;title&gt;简易代理&lt;/title&gt;<br>
+&lt;/head&gt;<br>
+&lt;body&gt;<br>
+&lt;script&gt;<br>
+// 从URL参数获取目标地址<br>
+const urlParams = new URLSearchParams(window.location.search);<br>
+const targetUrl = urlParams.get('url');<br>
+<br>
+if (targetUrl) {<br>
+  fetch(targetUrl)<br>
+    .then(response =&gt; response.text())<br>
+    .then(data =&gt; {<br>
+      document.body.innerHTML = '&lt;pre&gt;' + data + '&lt;/pre&gt;';<br>
+    })<br>
+    .catch(error =&gt; {<br>
+      document.body.innerHTML = '错误: ' + error;<br>
+    });<br>
+}<br>
+&lt;/script&gt;<br>
+&lt;/body&gt;<br>
+&lt;/html&gt;
+                </div>
+                
+                <p><strong>使用方法：</strong></p>
+                <ol style="padding-left: 20px; margin-top: 10px;">
+                    <li>将上面的代码保存为 <code>proxy.html</code></li>
+                    <li>用浏览器打开 <code>file:///路径/proxy.html?url=您要获取的网址</code></li>
+                    <li>页面会显示网页内容，复制内容到方法一中使用</li>
+                </ol>
+            </div>
+            
+            <div class="tip">
+                <strong>⚠️ 注意：</strong> 这种方法需要以 <code>file://</code> 协议打开本地HTML文件，部分浏览器可能有安全限制。
+            </div>
+        </div>
+        
+        <!-- 结果显示区域（共用） -->
+        <div class="tab-content" style="display: block; margin-top: 30px;">
+            <h2>📄 提取结果</h2>
+            <div class="result-actions">
+                <button type="button" class="btn-success" onclick="copyResults()" id="copyBtn">📋 复制结果</button>
+                <button type="button" class="btn-success" onclick="downloadResults()">💾 下载结果</button>
+                <button type="button" class="btn-danger" onclick="clearResults()">🗑️ 清空结果</button>
+            </div>
+            
+            <div id="resultStats" class="result-stats">等待提取...</div>
+            
+            <div class="result-container" id="resultContainer">
+                <div class="result-line" style="color: #7f8c8d; text-align: center; font-style: italic;">
+                    提取的结果将显示在这里...
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2024 网页内容提取工具 - 无CORS限制版 | 数据仅在浏览器本地处理，安全可靠</p>
+        </footer>
+    </div>
+
+    <script>
+        // 切换标签页
+        function switchTab(tabId) {
+            // 移除所有标签页的active类
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 激活选中的标签页
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // 设置搜索文本（方法一）
+        function setSearchText1(text) {
+            document.getElementById('searchText1').value = text;
+        }
+        
+        // 设置搜索文本（方法二）
+        function setSearchText2(text) {
+            document.getElementById('searchText2').value = text;
+        }
+        
+        // 从粘贴的内容提取
+        function extractFromPaste() {
+            const content = document.getElementById('pastedContent').value.trim();
+            const searchText = document.getElementById('searchText1').value.trim();
+            
+            if (!content) {
+                showStatus('请先粘贴网页内容', 'error', 1);
+                return;
+            }
+            
+            if (!searchText) {
+                showStatus('请输入要搜索的内容', 'error', 1);
+                return;
+            }
+            
+            // 提取包含搜索文本的行
+            const lines = content.split('\n');
+            const matchedLines = lines.filter(line => line.includes(searchText));
+            
+            // 显示结果
+            displayResults(matchedLines, searchText);
+            
+            showStatus(`成功提取 ${matchedLines.length} 行内容`, 'success', 1);
+        }
+        
+        // 使用扩展直接获取（方法二）
+        async function fetchWithExtension() {
+            const url = document.getElementById('directUrl').value.trim();
+            const searchText = document.getElementById('searchText2').value.trim();
+            
+            if (!url) {
+                showStatus('请输入网页地址', 'error', 2);
+                return;
+            }
+            
+            if (!searchText) {
+                showStatus('请输入要搜索的内容', 'error', 2);
+                return;
+            }
+            
+            showStatus('正在获取，请稍候...', '', 2);
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status}`);
+                }
+                
+                const content = await response.text();
+                
+                // 提取包含搜索文本的行
+                const lines = content.split('\n');
+                const matchedLines = lines.filter(line => line.includes(searchText));
+                
+                // 显示结果
+                displayResults(matchedLines, searchText);
+                
+                showStatus(`成功提取 ${matchedLines.length} 行内容`, 'success', 2);
+            } catch (error) {
+                console.error('获取失败:', error);
+                showStatus(`获取失败: ${error.message}<br>请确保已安装并启用了CORS扩展`, 'error', 2);
+            }
+        }
+        
+        // 显示结果
+        function displayResults(lines, searchText) {
+            const container = document.getElementById('resultContainer');
+            const stats = document.getElementById('resultStats');
+            
+            container.innerHTML = '';
+            
+            if (lines.length === 0) {
+                container.innerHTML = '<div class="result-line" style="color: #e74c3c; text-align: center;">❌ 未找到包含 "' + searchText + '" 的内容行</div>';
+                stats.textContent = '共找到 0 行匹配内容';
+                return;
+            }
+            
+            lines.forEach(line => {
+                const resultLine = document.createElement('div');
+                resultLine.className = 'result-line';
+                
+                // 高亮显示搜索文本
+                const highlightedLine = line.replace(
+                    new RegExp(escapeRegExp(searchText), 'gi'),
+                    match => `<span style="background-color: #ffeaa7; font-weight: bold; padding: 2px 4px; border-radius: 3px;">${match}</span>`
+                );
+                
+                resultLine.innerHTML = highlightedLine;
+                container.appendChild(resultLine);
+            });
+            
+            stats.textContent = `共找到 ${lines.length} 行包含 "${searchText}" 的内容`;
+            
+            // 滚动到结果区域
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // 清空结果
+        function clearResults() {
+            const container = document.getElementById('resultContainer');
+            const stats = document.getElementById('resultStats');
+            
+            container.innerHTML = '<div class="result-line" style="color: #7f8c8d; text-align: center; font-style: italic;">提取的结果将显示在这里...</div>';
+            stats.textContent = '等待提取...';
+        }
+        
+        // 清空所有
+        function clearAll() {
+            document.getElementById('pastedContent').value = '';
+            document.getElementById('searchText1').value = '';
+            clearResults();
+            showStatus('已清空', 'success', 1);
+        }
+        
+        // 复制结果
+        function copyResults() {
+            const container = document.getElementById('resultContainer');
+            const resultLines = Array.from(container.getElementsByClassName('result-line'));
+            
+            if (resultLines.length === 0 || resultLines[0].textContent.includes('提取的结果将显示在这里')) {
+                alert('没有可复制的内容');
+                return;
+            }
+            
+            const text = resultLines
+                .map(line => line.textContent)
+                .join('\n');
+            
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    const originalText = btn.textContent;
+                    btn.textContent = '✅ 已复制';
+                    btn.style.backgroundColor = '#2ecc71';
+                    
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.backgroundColor = '';
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('复制失败:', err);
+                    
+                    // 备选方案：使用execCommand
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    
+                    try {
+                        document.execCommand('copy');
+                        alert('结果已复制到剪贴板');
+                    } catch (err2) {
+                        alert('复制失败，请手动选择复制');
+                    }
+                    
+                    document.body.removeChild(textarea);
+                });
+        }
+        
+        // 下载结果
+        function downloadResults() {
+            const container = document.getElementById('resultContainer');
+            const resultLines = Array.from(container.getElementsByClassName('result-line'));
+            const searchText = document.getElementById('searchText1').value || 
+                              document.getElementById('searchText2').value || 
+                              'content';
+            
+            if (resultLines.length === 0 || resultLines[0].textContent.includes('提取的结果将显示在这里')) {
+                alert('没有可下载的内容');
+                return;
+            }
+            
+            const text = resultLines
+                .map(line => line.textContent)
+                .join('\n');
+            
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            a.href = url;
+            a.download = `提取结果_${searchText.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // 显示状态信息
+        function showStatus(message, type, methodNum) {
+            const statusEl = document.getElementById(`status${methodNum || ''}`);
+            if (statusEl) {
+                statusEl.innerHTML = message;
+                statusEl.className = 'status';
+                
+                if (type) {
+                    statusEl.classList.add(type);
+                }
+            }
+        }
+        
+        // 转义正则表达式特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为输入框添加示例内容
+            const exampleContent = `CCTV1,http://157.0.89.207:9003/hls/1/index.m3u8\nCCTV2,http://157.0.89.207:9003/hls/2/index.m3u8\nCCTV3,http://157.0.89.207:9003/hls/3/index.m3u8`;
+            document.getElementById('pastedContent').placeholder = "在这里粘贴您从网页复制的全部内容...\n\n例如：\n" + exampleContent;
+            
+            // 添加快捷键支持
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    const activeTab = document.querySelector('.tab-content.active').id;
+                    if (activeTab === 'method1') {
+                        extractFromPaste();
+                    } else if (activeTab === 'method2') {
+                        fetchWithExtension();
+                    }
+                }
+            });
+            
+            // 显示初始提示
+            showStatus('推荐使用方法一：手动复制粘贴，完全无CORS限制', 'success', 1);
+        });
+    </script>
+</body>
+</html>
