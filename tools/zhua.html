@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网站图标抓取工具 - Favicon Grabber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 600px;
+            padding: 48px 40px;
+            animation: fadeIn 0.6s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .logo svg { width: 48px; height: 48px; fill: white; }
+
+        h1 { font-size: 28px; color: #1a1a2e; font-weight: 700; margin-bottom: 8px; }
+        .subtitle { color: #666; font-size: 14px; }
+
+        .input-group { margin-bottom: 24px; }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 16px 20px;
+            border: 2px solid #e8e8e8;
+            border-radius: 14px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-field::placeholder { color: #aaa; }
+
+        .fetch-btn {
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .fetch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .fetch-btn:active { transform: translateY(0); }
+        .fetch-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+        .result-area {
+            display: none;
+            background: linear-gradient(135deg, #f8f9ff, #fff5f5);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-area.show { display: block; }
+
+        .result-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-title svg { width: 18px; height: 18px; fill: #667eea; }
+
+        .result-content {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .favicon-preview {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .favicon-preview img {
+            max-width: 56px;
+            max-height: 56px;
+            object-fit: contain;
+        }
+
+        .favicon-preview .placeholder-icon { width: 40px; height: 40px; fill: #ccc; }
+
+        .result-details { flex: 1; min-width: 200px; }
+
+        .url-display {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #333;
+            word-break: break-all;
+            line-height: 1.6;
+            border: 1px solid #eee;
+            margin-bottom: 12px;
+        }
+
+        .action-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+        .action-btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+        }
+
+        .action-btn svg { width: 16px; height: 16px; }
+
+        .copy-btn { background: #e8f5e9; color: #2e7d32; }
+        .copy-btn:hover { background: #c8e6c9; }
+
+        .open-btn { background: #e3f2fd; color: #1565c0; }
+        .open-btn:hover { background: #bbdefb; }
+
+        .download-btn { background: #fff3e0; color: #e65100; }
+        .download-btn:hover { background: #ffe0b2; }
+
+        .error-area {
+            display: none;
+            background: #fff5f5;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .error-area.show { display: block; animation: shake 0.5s ease; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .error-icon {
+            width: 60px;
+            height: 60px;
+            background: #ffebee;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .error-icon svg { width: 32px; height: 32px; fill: #e53935; }
+        .error-text { color: #c62828; font-size: 14px; }
+
+        .loading { display: none; text-align: center; padding: 40px 0; }
+        .loading.show { display: block; }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { color: #666; font-size: 14px; }
+
+        .tips {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f8f9ff;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .tips-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tips-title svg { width: 16px; height: 16px; fill: #667eea; }
+        .tips-list { padding-left: 20px; line-height: 1.8; }
+
+        .history-section {
+            margin-top: 32px;
+            border-top: 1px solid #eee;
+            padding-top: 24px;
+        }
+
+        .history-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .clear-history {
+            font-size: 12px;
+            color: #999;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .clear-history:hover { background: #f0f0f0; color: #666; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: #fafafa;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover { background: #f0f0f0; }
+        .history-item img { width: 24px; height: 24px; border-radius: 6px; }
+        .history-item span {
+            flex: 1;
+            font-size: 13px;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #333;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        @media (max-width: 500px) {
+            .container { padding: 32px 24px; }
+            .input-wrapper { flex-direction: column; }
+            .fetch-btn { width: 100%; }
+            .result-content { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            </div>
+            <h1>网站图标抓取工具</h1>
+            <p class="subtitle">快速获取任意网站的 Favicon 图标地址</p>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">输入网址</label>
+            <div class="input-wrapper">
+                <input type="url" class="input-field" id="urlInput" placeholder="请输入网站地址，如 https://www.example.com" />
+                <button class="fetch-btn" id="fetchBtn" onclick="fetchFavicon()">获取图标</button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">正在抓取图标...</p>
+        </div>
+
+        <div class="result-area" id="resultArea">
+            <div class="result-title">
+                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+                抓取结果
+            </div>
+            <div class="result-content">
+                <div class="favicon-preview" id="faviconPreview">
+                    <img id="faviconImg" alt="favicon">
+                </div>
+                <div class="result-details">
+                    <div class="url-display" id="urlDisplay"></div>
+                    <div class="action-buttons">
+                        <button class="action-btn copy-btn" onclick="copyUrl()">
+                            <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                            复制链接
+                        </button>
+                        <button class="action-btn open-btn" onclick="openUrl()">
+                            <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                            打开链接
+                        </button>
+                        <button class="action-btn download-btn" onclick="downloadImg()">
+                            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                            下载图标
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="error-area" id="errorArea">
+            <div class="error-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            </div>
+            <p class="error-text" id="errorText">获取失败，请检查网址是否正确</p>
+        </div>
+
+        <div class="tips">
+            <div class="tips-title">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                使用说明
+            </div>
+            <ul class="tips-list">
+                <li>输入完整的网站地址（包含 https://）</li>
+                <li>工具会自动分析网页源码查找图标链接</li>
+                <li>支持 PNG、ICO、SVG 等多种格式</li>
+            </ul>
+        </div>
+
+        <div class="history-section" id="historySection" style="display: none;">
+            <div class="history-title">
+                <span>历史记录</span>
+                <button class="clear-history" onclick="clearHistory()">清空</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentFaviconUrl = '';
+        let currentPageUrl = '';
+        let history = JSON.parse(localStorage.getItem('faviconHistory') || '[]');
+
+        function init() {
+            renderHistory();
+            document.getElementById('urlInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') fetchFavicon();
+            });
+        }
+
+        async function fetchFavicon() {
+            const input = document.getElementById('urlInput');
+            let url = input.value.trim();
+
+            if (!url) {
+                showError('请输入网址');
+                return;
+            }
+
+            // 标准化URL
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+                input.value = url;
+            }
+
+            // 移除末尾斜杠
+            url = url.replace(/\/$/, '');
+
+            showLoading(true);
+            hideResult();
+            hideError();
+
+            try {
+                const faviconUrl = await getFavicon(url);
+                currentPageUrl = url;
+                showResult(faviconUrl, url);
+                addToHistory(url, faviconUrl);
+            } catch (error) {
+                showError(error.message || '获取失败，请检查网址是否正确');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function getFavicon(url) {
+            let faviconUrl = null;
+            const origin = new URL(url).origin;
+
+            // 方案1: 直接尝试 favicon.ico（最可靠，大多数网站都有）
+            faviconUrl = origin + '/favicon.ico';
+            if (await checkUrl(faviconUrl)) {
+                return faviconUrl;
+            }
+
+            // 方案2: 通过 iframe 加载目标页面，然后从 DOM 中提取图标
+            try {
+                faviconUrl = await getFaviconFromDOM(url);
+                if (faviconUrl) return faviconUrl;
+            } catch (e) {}
+
+            // 方案3: 尝试 apple-touch-icon
+            const appleIcon = origin + '/apple-touch-icon.png';
+            if (await checkUrl(appleIcon)) {
+                return appleIcon;
+            }
+
+            // 方案4: 尝试 apple-touch-icon-precomposed
+            const appleIconPre = origin + '/apple-touch-icon-precomposed.png';
+            if (await checkUrl(appleIconPre)) {
+                return appleIconPre;
+            }
+
+            // 方案5: 尝试 /favicon.png
+            const faviconPng = origin + '/favicon.png';
+            if (await checkUrl(faviconPng)) {
+                return faviconPng;
+            }
+
+            // 方案6: 尝试 Google Favicon API
+            const domain = new URL(url).hostname;
+            const googleFavicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+            if (await checkUrl(googleFavicon)) {
+                return googleFavicon;
+            }
+
+            // 如果都失败了，返回默认的 favicon.ico（即使可能不存在）
+            return origin + '/favicon.ico';
+        }
+
+        // 通过创建隐藏的 iframe 加载页面，从 DOM 中提取 favicon
+        function getFaviconFromDOM(url) {
+            return new Promise((resolve) => {
+                // 使用 codetabs CORS 代理获取页面内容
+                const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+
+                const timeout = setTimeout(() => {
+                    resolve(null);
+                }, 5000);
+
+                fetch(proxyUrl)
+                    .then(response => response.text())
+                    .then(html => {
+                        clearTimeout(timeout);
+
+                        // 解析 HTML 查找图标
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const origin = new URL(url).origin;
+
+                        // 按优先级查找图标
+                        const selectors = [
+                            'link[rel="icon"]',
+                            'link[rel="shortcut icon"]',
+                            'link[rel="apple-touch-icon"]',
+                            'link[rel="apple-touch-icon-precomposed"]'
+                        ];
+
+                        for (const selector of selectors) {
+                            const link = doc.querySelector(selector);
+                            if (link && link.href) {
+                                const resolved = resolveUrl(link.href, origin);
+                                resolve(resolved);
+                                return;
+                            }
+                        }
+
+                        // 检查 meta 标签
+                        const ogImage = doc.querySelector('meta[property="og:image"]');
+                        if (ogImage && ogImage.content) {
+                            resolve(resolveUrl(ogImage.content, origin));
+                            return;
+                        }
+
+                        resolve(null);
+                    })
+                    .catch(() => {
+                        clearTimeout(timeout);
+                        resolve(null);
+                    });
+            });
+        }
+
+        function resolveUrl(href, baseUrl) {
+            if (!href) return null;
+            if (href.startsWith('//')) return 'https:' + href;
+            if (href.startsWith('/')) return baseUrl + href;
+            if (href.startsWith('http://') || href.startsWith('https://')) return href;
+            return baseUrl + '/' + href;
+        }
+
+        // 检查 URL 是否可访问
+        async function checkUrl(url) {
+            try {
+                // 创建一个新的 img 元素来检测图标是否有效
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => resolve(true);
+                    img.onerror = () => resolve(false);
+                    img.src = url;
+                    // 3秒超时
+                    setTimeout(() => resolve(false), 3000);
+                });
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('show', show);
+            document.getElementById('fetchBtn').disabled = show;
+        }
+
+        function showResult(faviconUrl, pageUrl) {
+            currentFaviconUrl = faviconUrl;
+
+            const img = document.getElementById('faviconImg');
+            const preview = document.getElementById('faviconPreview');
+
+            img.onload = function() {
+                const placeholder = preview.querySelector('.placeholder-icon');
+                if (placeholder) placeholder.remove();
+                img.style.display = 'block';
+            };
+
+            img.onerror = function() {
+                img.style.display = 'none';
+                if (!preview.querySelector('.placeholder-icon')) {
+                    preview.innerHTML = `<svg class="placeholder-icon" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>`;
+                }
+            };
+
+            img.src = faviconUrl;
+            document.getElementById('urlDisplay').textContent = faviconUrl;
+            document.getElementById('resultArea').classList.add('show');
+        }
+
+        function hideResult() {
+            document.getElementById('resultArea').classList.remove('show');
+            const preview = document.getElementById('faviconPreview');
+            const placeholder = preview.querySelector('.placeholder-icon');
+            if (placeholder) placeholder.remove();
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            document.getElementById('errorArea').classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('errorArea').classList.remove('show');
+        }
+
+        function copyUrl() {
+            navigator.clipboard.writeText(currentFaviconUrl).then(() => {
+                showToast('链接已复制到剪贴板');
+            }).catch(() => {
+                showToast('复制失败');
+            });
+        }
+
+        function openUrl() {
+            window.open(currentFaviconUrl, '_blank');
+        }
+
+        function downloadImg() {
+            showToast('正在下载...');
+            const a = document.createElement('a');
+            a.href = currentFaviconUrl;
+            a.download = 'favicon.ico';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => showToast('如果下载未开始，请右键点击图标保存'), 1000);
+        }
+
+        function addToHistory(pageUrl, faviconUrl) {
+            const item = { pageUrl, faviconUrl, time: Date.now() };
+            history = [item, ...history.filter(h => h.pageUrl !== pageUrl)].slice(0, 10);
+            localStorage.setItem('faviconHistory', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const section = document.getElementById('historySection');
+            const list = document.getElementById('historyList');
+
+            if (history.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            list.innerHTML = history.map((item, index) => `
+                <div class="history-item" onclick="loadFromHistory(${index})">
+                    <img src="${item.faviconUrl}" alt="favicon" onerror="this.style.display='none'">
+                    <span>${item.pageUrl}</span>
+                </div>
+            `).join('');
+        }
+
+        function loadFromHistory(index) {
+            const item = history[index];
+            document.getElementById('urlInput').value = item.pageUrl;
+            currentPageUrl = item.pageUrl;
+            showResult(item.faviconUrl, item.pageUrl);
+        }
+
+        function clearHistory() {
+            history = [];
+            localStorage.removeItem('faviconHistory');
+            renderHistory();
+            showToast('历史记录已清空');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
