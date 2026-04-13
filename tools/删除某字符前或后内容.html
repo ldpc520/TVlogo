@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正则表达式文本处理器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e8f5e9;
+            margin: 0;
+            padding: 20px;
+            color: #2e7d32;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #f1f8e9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #1b5e20;
+            margin-bottom: 20px;
+        }
+        .input-area, .output-area {
+            width: 100%;
+            min-height: 200px;
+            padding: 10px;
+            border: 1px solid #a5d6a7;
+            border-radius: 4px;
+            background-color: #f9fbe7;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .regex-input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #a5d6a7;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #81c784;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #66bb6a;
+        }
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .radio-option {
+            display: flex;
+            align-items: center;
+        }
+        label {
+            margin-left: 5px;
+        }
+        .example {
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .success {
+            background-color: #c8e6c9;
+            color: #1b5e20;
+        }
+        .error {
+            background-color: #ffcdd2;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>正则表达式文本处理器</h1>
+        
+        <div class="radio-group">
+            <div class="radio-option">
+                <input type="radio" id="remove-before" name="operation" value="before" checked>
+                <label for="remove-before">删除匹配字符之前的内容</label>
+            </div>
+            <div class="radio-option">
+                <input type="radio" id="remove-after" name="operation" value="after">
+                <label for="remove-after">删除匹配字符之后的内容</label>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <input type="text" id="regex-pattern" class="regex-input" placeholder="输入正则表达式，例如: ABC">
+            <button id="process-btn">处理文本</button>
+            <button id="clear-btn">清空</button>
+            <button id="copy-btn">复制结果</button>
+        </div>
+        
+        <div id="status-message" class="status" style="display: none;"></div>
+        
+        <div class="input-output">
+            <textarea id="input-text" class="input-area" placeholder="在此输入要处理的文本..."></textarea>
+            <textarea id="output-text" class="output-area" placeholder="处理后的文本将显示在这里..." readonly></textarea>
+        </div>
+        
+        <div class="example">
+            <h3>使用示例:</h3>
+            <p><strong>删除某字符之前:</strong> 输入要匹配的字符，如 <code>ABC</code>，将删除每行中第一个ABC之前的所有内容，保留ABC及其后的内容</p>
+            <p><strong>删除某字符之后:</strong> 输入要匹配的字符，如 <code>ABC</code>，将删除每行中第一个ABC之后的所有内容，保留ABC及其前的内容</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('process-btn').addEventListener('click', processText);
+        document.getElementById('clear-btn').addEventListener('click', clearText);
+        document.getElementById('copy-btn').addEventListener('click', copyResult);
+        
+        function showStatus(message, isError = false) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.className = isError ? 'status error' : 'status success';
+            statusElement.style.display = 'block';
+            
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        function processText() {
+            const inputText = document.getElementById('input-text').value;
+            const regexPattern = document.getElementById('regex-pattern').value;
+            const operation = document.querySelector('input[name="operation"]:checked').value;
+            
+            if (!inputText) {
+                showStatus('请输入要处理的文本', true);
+                return;
+            }
+            
+            if (!regexPattern) {
+                showStatus('请输入正则表达式', true);
+                return;
+            }
+            
+            try {
+                let result = '';
+                const lines = inputText.split('\n');
+                
+                for (const line of lines) {
+                    const matchIndex = line.search(new RegExp(regexPattern));
+                    
+                    if (matchIndex === -1) {
+                        result += line + '\n';
+                        continue;
+                    }
+                    
+                    if (operation === 'before') {
+                        // 保留匹配字符及其后的内容
+                        result += line.substring(matchIndex) + '\n';
+                    } else {
+                        // 保留匹配字符及其前的内容
+                        const match = line.match(new RegExp(regexPattern))[0];
+                        result += line.substring(0, matchIndex + match.length) + '\n';
+                    }
+                }
+                
+                document.getElementById('output-text').value = result.trim();
+                showStatus('文本处理成功');
+            } catch (e) {
+                showStatus('处理错误: ' + e.message, true);
+            }
+        }
+        
+        function copyResult() {
+            const outputText = document.getElementById('output-text');
+            outputText.select();
+            document.execCommand('copy');
+            showStatus('结果已复制到剪贴板');
+        }
+        
+        function clearText() {
+            document.getElementById('input-text').value = '';
+            document.getElementById('output-text').value = '';
+            document.getElementById('regex-pattern').value = '';
+            document.getElementById('status-message').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
