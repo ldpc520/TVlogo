@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>综合加密与URL编码工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #858796;
+            --success-color: #1cc88a;
+            --bg-color: #f8f9fc;
+            --card-bg: #ffffff;
+            --text-color: #5a5c69;
+            --border-color: #e3e6f0;
+        }
+        
+        .dark-mode {
+            --primary-color: #4e73df;
+            --secondary-color: #b7b9cc;
+            --success-color: #1cc88a;
+            --bg-color: #2a3042;
+            --card-bg: #3a4256;
+            --text-color: #d1d3e2;
+            --border-color: #4a5468;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .form-control, .form-select, textarea {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+        
+        .form-control:focus, .form-select:focus, textarea:focus {
+            background-color: var(--card-bg);
+            border-color: var(--primary-color);
+            color: var(--text-color);
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .history-item {
+            border-left: 3px solid var(--primary-color);
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background-color: rgba(78, 115, 223, 0.05);
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .encrypted-text {
+            font-family: 'Courier New', monospace;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            word-break: break-all;
+        }
+        
+        .algorithm-badge {
+            background-color: var(--primary-color);
+        }
+        
+        .action-buttons .btn {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .header-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #224abe 100%);
+            color: white;
+            padding: 2rem 0;
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 2rem;
+        }
+        
+        .result-area {
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        .nav-tabs {
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .nav-tabs .nav-link {
+            color: var(--text-color);
+            border: 1px solid transparent;
+            border-radius: 0.375rem 0.375rem 0 0;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background-color: var(--card-bg);
+            border-color: var(--border-color) var(--border-color) var(--card-bg);
+        }
+        
+        .nav-tabs .nav-link:hover {
+            border-color: var(--border-color) var(--border-color) var(--primary-color);
+        }
+        
+        .url-mode-selector {
+            display: flex;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .url-mode-btn {
+            flex: 1;
+            padding: 10px 15px;
+            text-align: center;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .url-mode-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .url-mode-btn:first-child {
+            border-radius: 5px 0 0 5px;
+        }
+        
+        .url-mode-btn:last-child {
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .url-action-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(90deg, var(--primary-color) 0%, #224abe 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 20px;
+        }
+        
+        .url-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-box {
+            background-color: rgba(78, 115, 223, 0.05);
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 头部区域 -->
+    <div class="header-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="fas fa-shield-alt me-2"></i>综合加密与URL编码工具</h1>
+                    <p class="lead mb-0">一站式解决加密、解密和URL编码需求</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group">
+                        <button class="btn btn-outline-light" id="clearAll">
+                            <i class="fas fa-trash me-1"></i>清空全部
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <!-- 标签页导航 -->
+        <ul class="nav nav-tabs mb-4" id="toolTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="crypto-tab" data-bs-toggle="tab" data-bs-target="#crypto" type="button" role="tab">
+                    <i class="fas fa-key me-1"></i>PHP加密解密
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="url-tab" data-bs-toggle="tab" data-bs-target="#url" type="button" role="tab">
+                    <i class="fas fa-link me-1"></i>URL编码解码
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="toolTabContent">
+            <!-- PHP加密解密标签页 -->
+            <div class="tab-pane fade show active" id="crypto" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card mb-4">
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-key me-2"></i>加密/解密</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="cryptoForm">
+                                    <div class="mb-3">
+                                        <label for="inputText" class="form-label">输入文本</label>
+                                        <textarea class="form-control" id="inputText" placeholder="请输入要加密或解密的文本..." rows="5"></textarea>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="algorithm" class="form-label">加密算法</label>
+                                            <select class="form-select" id="algorithm">
+                                                <option value="base64">Base64</option>
+                                                <option value="aes">AES-256</option>
+                                                <option value="des">DES</option>
+                                                <option value="md5">MD5 (仅加密)</option>
+                                                <option value="sha1">SHA1 (仅加密)</option>
+                                                <option value="rot13">ROT13</option>
+                                                <option value="caesar">凯撒密码</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="key" class="form-label">密钥 (部分算法需要)</label>
+                                            <input type="text" class="form-control" id="key" placeholder="输入密钥（可选）">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3" id="caesarShiftContainer" style="display: none;">
+                                        <label for="caesarShift" class="form-label">凯撒密码偏移量</label>
+                                        <input type="number" class="form-control" id="caesarShift" min="1" max="25" value="3">
+                                    </div>
+                                    
+                                    <div class="action-buttons d-flex justify-content-between">
+                                        <div>
+                                            <button type="button" class="btn btn-primary" id="encryptBtn">
+                                                <i class="fas fa-lock me-1"></i>加密
+                                            </button>
+                                            <button type="button" class="btn btn-success" id="decryptBtn">
+                                                <i class="fas fa-lock-open me-1"></i>解密
+                                            </button>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-secondary" id="clearCryptoBtn">
+                                            <i class="fas fa-eraser me-1"></i>清空输入
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- 结果区域 -->
+                        <div class="card">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-result me-2"></i>结果</h5>
+                                <button class="btn btn-sm btn-outline-primary" id="copyResult">
+                                    <i class="fas fa-copy me-1"></i>复制
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="result-area p-3" id="resultArea">
+                                    <p class="text-muted text-center my-5">加密或解密的结果将显示在这里</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 侧边栏 -->
+                    <div class="col-lg-4">
+                        <!-- 历史记录 -->
+                        <div class="card mb-4">
+                            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                                <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-history me-2"></i>历史记录</h5>
+                                <button class="btn btn-sm btn-outline-secondary" id="clearHistory">
+                                    <i class="fas fa-trash me-1"></i>清空
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="historyList">
+                                    <p class="text-muted text-center my-3">暂无历史记录</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 算法说明 -->
+                        <div class="card">
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-info-circle me-2"></i>算法说明</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="algorithmInfo">
+                                    <h6>Base64</h6>
+                                    <p class="small">一种基于64个可打印字符来表示二进制数据的表示方法。</p>
+                                    
+                                    <h6>AES-256</h6>
+                                    <p class="small">高级加密标准，使用256位密钥，是目前最流行的对称加密算法之一。</p>
+                                    
+                                    <h6>DES</h6>
+                                    <p class="small">数据加密标准，是一种对称密钥加密块密码算法。</p>
+                                    
+                                    <h6>MD5</h6>
+                                    <p class="small">广泛使用的密码散列函数，产生一个128位的散列值，不可逆。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- URL编码解码标签页 -->
+            <div class="tab-pane fade" id="url" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-link me-2"></i>URL编码/解码</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- 模式选择器 -->
+                                <div class="url-mode-selector">
+                                    <button class="url-mode-btn active" id="urlEncodeBtn">URL编码</button>
+                                    <button class="url-mode-btn" id="urlDecodeBtn">URL解码</button>
+                                </div>
+                                
+                                <!-- 输入区域 -->
+                                <div class="mb-4">
+                                    <label for="urlInputText" class="form-label">输入URL</label>
+                                    <textarea class="form-control" id="urlInputText" rows="4" placeholder="请输入要编码或解码的URL...">https://example.com/测试页面?参数=值&name=测试</textarea>
+                                </div>
+                                
+                                <!-- 处理按钮 -->
+                                <button class="url-action-btn" id="processUrlBtn">开始编码</button>
+                                
+                                <!-- 结果区域 -->
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label">结果</label>
+                                        <div>
+                                            <button class="btn btn-sm btn-outline-primary" id="copyUrlResult">
+                                                <i class="fas fa-copy me-1"></i>复制
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary" id="clearUrlBtn">
+                                                <i class="fas fa-eraser me-1"></i>清空
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <textarea class="form-control" id="urlOutputText" rows="4" readonly placeholder="处理后的结果将显示在这里..."></textarea>
+                                </div>
+                                
+                                <!-- 说明 -->
+                                <div class="info-box">
+                                    <h6><i class="fas fa-info-circle me-2"></i>URL编码/解码说明</h6>
+                                    <p class="small mb-0">
+                                        <strong>URL编码</strong>：将URL中的特殊字符转换为%后跟两位十六进制数的形式，以便在网络上安全传输。<br>
+                                        <strong>URL解码</strong>：将编码后的URL恢复为原始形式，便于阅读和使用。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <!-- URL编码示例 -->
+                        <div class="card mb-4">
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-code me-2"></i>示例</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="small mb-2"><strong>原始URL：</strong></p>
+                                <p class="small text-muted mb-3">https://example.com/测试页面?参数=值&name=测试</p>
+                                
+                                <p class="small mb-2"><strong>URL编码后：</strong></p>
+                                <p class="small text-muted">https%3A%2F%2Fexample.com%2F%E6%B5%8B%E8%AF%95%E9%A1%B5%E9%9D%A2%3F%E5%8F%82%E6%95%B0%3D%E5%80%BC%26name%3D%E6%B5%8B%E8%AF%95</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 使用技巧 -->
+                        <div class="card">
+                            <div class="card-header py-3">
+                                <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-lightbulb me-2"></i>使用技巧</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="small mb-0">
+                                    <li>URL编码常用于处理包含特殊字符的网址</li>
+                                    <li>在GET请求中传递参数时，需要进行URL编码</li>
+                                    <li>中文字符、空格和特殊符号都需要编码</li>
+                                    <li>编码后的URL可以作为参数安全传输</li>
+                                    <li>解码功能可以还原编码后的URL</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 主题切换按钮 -->
+    <div class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        // 主题切换功能
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const icon = this.querySelector('i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+
+        // ==================== PHP加密解密工具逻辑 ====================
+        
+        // 算法选择变化
+        document.getElementById('algorithm').addEventListener('change', function() {
+            const caesarContainer = document.getElementById('caesarShiftContainer');
+            if (this.value === 'caesar') {
+                caesarContainer.style.display = 'block';
+            } else {
+                caesarContainer.style.display = 'none';
+            }
+        });
+
+        // 加密函数
+        document.getElementById('encryptBtn').addEventListener('click', function() {
+            const inputText = document.getElementById('inputText').value;
+            const algorithm = document.getElementById('algorithm').value;
+            const key = document.getElementById('key').value;
+            
+            if (!inputText) {
+                alert('请输入要加密的文本！');
+                return;
+            }
+            
+            let result = '';
+            
+            try {
+                switch(algorithm) {
+                    case 'base64':
+                        result = btoa(unescape(encodeURIComponent(inputText)));
+                        break;
+                    case 'aes':
+                        if (!key) {
+                            alert('AES加密需要密钥！');
+                            return;
+                        }
+                        result = CryptoJS.AES.encrypt(inputText, key).toString();
+                        break;
+                    case 'des':
+                        if (!key) {
+                            alert('DES加密需要密钥！');
+                            return;
+                        }
+                        result = CryptoJS.DES.encrypt(inputText, key).toString();
+                        break;
+                    case 'md5':
+                        result = CryptoJS.MD5(inputText).toString();
+                        break;
+                    case 'sha1':
+                        result = CryptoJS.SHA1(inputText).toString();
+                        break;
+                    case 'rot13':
+                        result = inputText.replace(/[a-zA-Z]/g, function(c) {
+                            return String.fromCharCode((c <= 'Z' ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26);
+                        });
+                        break;
+                    case 'caesar':
+                        const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+                        result = inputText.replace(/[a-zA-Z]/g, function(c) {
+                            const base = c <= 'Z' ? 65 : 97;
+                            return String.fromCharCode((c.charCodeAt(0) - base + shift) % 26 + base);
+                        });
+                        break;
+                    default:
+                        result = '不支持的算法';
+                }
+                
+                displayResult(result, '加密');
+                addToHistory(inputText, result, algorithm, '加密');
+            } catch (error) {
+                displayResult('加密过程中出现错误: ' + error.message, '错误');
+            }
+        });
+
+        // 解密函数
+        document.getElementById('decryptBtn').addEventListener('click', function() {
+            const inputText = document.getElementById('inputText').value;
+            const algorithm = document.getElementById('algorithm').value;
+            const key = document.getElementById('key').value;
+            
+            if (!inputText) {
+                alert('请输入要解密的文本！');
+                return;
+            }
+            
+            // 检查是否支持解密
+            if (algorithm === 'md5' || algorithm === 'sha1') {
+                alert('该算法不支持解密！');
+                return;
+            }
+            
+            let result = '';
+            
+            try {
+                switch(algorithm) {
+                    case 'base64':
+                        result = decodeURIComponent(escape(atob(inputText)));
+                        break;
+                    case 'aes':
+                        if (!key) {
+                            alert('AES解密需要密钥！');
+                            return;
+                        }
+                        result = CryptoJS.AES.decrypt(inputText, key).toString(CryptoJS.enc.Utf8);
+                        break;
+                    case 'des':
+                        if (!key) {
+                            alert('DES解密需要密钥！');
+                            return;
+                        }
+                        result = CryptoJS.DES.decrypt(inputText, key).toString(CryptoJS.enc.Utf8);
+                        break;
+                    case 'rot13':
+                        // ROT13是对称的，加密和解密相同
+                        result = inputText.replace(/[a-zA-Z]/g, function(c) {
+                            return String.fromCharCode((c <= 'Z' ? 90 : 122) >= (c = c.charCodeAt(0) + 13) ? c : c - 26);
+                        });
+                        break;
+                    case 'caesar':
+                        const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+                        result = inputText.replace(/[a-zA-Z]/g, function(c) {
+                            const base = c <= 'Z' ? 65 : 97;
+                            return String.fromCharCode((c.charCodeAt(0) - base - shift + 26) % 26 + base);
+                        });
+                        break;
+                    default:
+                        result = '不支持的算法';
+                }
+                
+                // 检查解密结果是否有效
+                if (!result && algorithm !== 'rot13' && algorithm !== 'caesar') {
+                    result = '解密失败，请确认密钥和加密文本是否正确';
+                }
+                
+                displayResult(result, '解密');
+                addToHistory(inputText, result, algorithm, '解密');
+            } catch (error) {
+                displayResult('解密过程中出现错误: ' + error.message, '错误');
+            }
+        });
+
+        // 显示结果
+        function displayResult(result, operation) {
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">${operation}结果</h6>
+                    <span class="badge algorithm-badge">${document.getElementById('algorithm').value.toUpperCase()}</span>
+                </div>
+                <div class="encrypted-text">${result}</div>
+                <div class="mt-2 small text-muted">结果长度: ${result.length} 字符</div>
+            `;
+        }
+
+        // 添加到历史记录
+        function addToHistory(input, output, algorithm, operation) {
+            let history = JSON.parse(localStorage.getItem('encryptionHistory')) || [];
+            
+            // 限制历史记录数量
+            if (history.length >= 10) {
+                history.pop();
+            }
+            
+            history.unshift({
+                input: input.length > 50 ? input.substring(0, 50) + '...' : input,
+                output: output.length > 50 ? output.substring(0, 50) + '...' : output,
+                algorithm: algorithm,
+                operation: operation,
+                timestamp: new Date().toLocaleString()
+            });
+            
+            localStorage.setItem('encryptionHistory', JSON.stringify(history));
+            updateHistoryDisplay();
+        }
+
+        // 更新历史记录显示
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('historyList');
+            const history = JSON.parse(localStorage.getItem('encryptionHistory')) || [];
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<p class="text-muted text-center my-3">暂无历史记录</p>';
+                return;
+            }
+            
+            let html = '';
+            history.forEach(item => {
+                html += `
+                    <div class="history-item">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="badge bg-secondary">${item.algorithm}</span>
+                            <span class="text-muted">${item.timestamp}</span>
+                        </div>
+                        <div class="small">
+                            <strong>${item.operation}:</strong> ${item.input}
+                        </div>
+                        <div class="small text-truncate">
+                            <strong>结果:</strong> ${item.output}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            historyList.innerHTML = html;
+        }
+
+        // 复制结果
+        document.getElementById('copyResult').addEventListener('click', function() {
+            const resultText = document.querySelector('.encrypted-text');
+            if (resultText) {
+                navigator.clipboard.writeText(resultText.textContent)
+                    .then(() => {
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+                        setTimeout(() => {
+                            this.innerHTML = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('复制失败: ', err);
+                    });
+            }
+        });
+
+        // 清空输入
+        document.getElementById('clearCryptoBtn').addEventListener('click', function() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('resultArea').innerHTML = '<p class="text-muted text-center my-5">加密或解密的结果将显示在这里</p>';
+        });
+
+        // 清空历史记录
+        document.getElementById('clearHistory').addEventListener('click', function() {
+            if (confirm('确定要清空所有历史记录吗？')) {
+                localStorage.removeItem('encryptionHistory');
+                updateHistoryDisplay();
+            }
+        });
+
+        // ==================== URL编码解码工具逻辑 ====================
+        
+        // 获取URL工具DOM元素
+        const urlEncodeBtn = document.getElementById('urlEncodeBtn');
+        const urlDecodeBtn = document.getElementById('urlDecodeBtn');
+        const processUrlBtn = document.getElementById('processUrlBtn');
+        const copyUrlResultBtn = document.getElementById('copyUrlResult');
+        const clearUrlBtn = document.getElementById('clearUrlBtn');
+        const urlInputText = document.getElementById('urlInputText');
+        const urlOutputText = document.getElementById('urlOutputText');
+        
+        // 当前URL处理模式
+        let currentUrlMode = 'encode';
+        
+        // 切换URL处理模式
+        urlEncodeBtn.addEventListener('click', () => {
+            setUrlMode('encode');
+        });
+        
+        urlDecodeBtn.addEventListener('click', () => {
+            setUrlMode('decode');
+        });
+        
+        // 设置URL处理模式
+        function setUrlMode(mode) {
+            currentUrlMode = mode;
+            
+            // 更新按钮样式
+            urlEncodeBtn.classList.toggle('active', mode === 'encode');
+            urlDecodeBtn.classList.toggle('active', mode === 'decode');
+            
+            // 更新处理按钮文本
+            processUrlBtn.textContent = mode === 'encode' ? '开始编码' : '开始解码';
+            
+            // 更新输入框占位符
+            urlInputText.placeholder = mode === 'encode' 
+                ? '请输入要编码的URL...' 
+                : '请输入要解码的URL...';
+        }
+        
+        // 处理URL
+        processUrlBtn.addEventListener('click', () => {
+            const input = urlInputText.value.trim();
+            
+            if (!input) {
+                alert('请输入要处理的URL！');
+                return;
+            }
+            
+            try {
+                if (currentUrlMode === 'encode') {
+                    // URL编码
+                    urlOutputText.value = encodeURIComponent(input);
+                } else {
+                    // URL解码
+                    urlOutputText.value = decodeURIComponent(input);
+                }
+            } catch (error) {
+                urlOutputText.value = '错误：无效的URL格式！';
+                console.error(error);
+            }
+        });
+        
+        // 复制URL结果
+        copyUrlResultBtn.addEventListener('click', () => {
+            if (!urlOutputText.value) {
+                alert('没有内容可复制！');
+                return;
+            }
+            
+            urlOutputText.select();
+            document.execCommand('copy');
+            
+            // 临时更改按钮文本
+            const originalText = copyUrlResultBtn.innerHTML;
+            copyUrlResultBtn.innerHTML = '<i class="fas fa-check me-1"></i>已复制';
+            
+            setTimeout(() => {
+                copyUrlResultBtn.innerHTML = originalText;
+            }, 2000);
+        });
+        
+        // 清空URL工具内容
+        clearUrlBtn.addEventListener('click', () => {
+            urlInputText.value = '';
+            urlOutputText.value = '';
+        });
+
+        // 清空所有
+        document.getElementById('clearAll').addEventListener('click', function() {
+            if (confirm('确定要清空所有工具中的输入和内容吗？')) {
+                // 清空加密工具
+                document.getElementById('inputText').value = '';
+                document.getElementById('resultArea').innerHTML = '<p class="text-muted text-center my-5">加密或解密的结果将显示在这里</p>';
+                
+                // 清空URL工具
+                urlInputText.value = 'https://example.com/测试页面?参数=值&name=测试';
+                urlOutputText.value = '';
+                
+                // 清空历史记录
+                localStorage.removeItem('encryptionHistory');
+                updateHistoryDisplay();
+            }
+        });
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            updateHistoryDisplay();
+            
+            // 初始化URL工具示例
+            setUrlMode('encode');
+        });
+    </script>
+</body>
+</html>
