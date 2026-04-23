@@ -1,831 +1,775 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <title>电脑装机配置清单</title>
-  <!-- 引入Bootstrap CSS（美化界面） -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-  <!-- 引入Font Awesome图标（导出按钮图标） -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-  />
-  <style>
-    body {
-      background-color: #f8f9fa;
-      font-family: 'Microsoft YaHei', sans-serif;
-    }
-    .container {
-      max-width: 1200px;
-    }
-    .table {
-      margin-bottom: 0;
-    }
-    .table th {
-      background-color: #0d6efd;
-      color: white;
-      font-weight: 600;
-      text-align: center;
-      padding: 12px 8px;
-      border: 1px solid #dee2e6;
-    }
-    .table td {
-      padding: 10px 8px;
-      vertical-align: middle;
-      border: 1px solid #dee2e6;
-    }
-    .table tbody tr:hover {
-      background-color: #f5f5f5;
-    }
-    .form-control {
-      border-radius: 4px;
-      border: 1px solid #ced4da;
-      padding: 8px 12px;
-      font-size: 14px;
-      transition: all 0.3s;
-    }
-    .form-control:focus {
-      border-color: #86b7fe;
-      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
-    .model-link {
-      color: #0d6efd;
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 0.2s;
-    }
-    .model-link:hover {
-      color: #0a58ca;
-      text-decoration: underline;
-    }
-    .total-item, #totalPrice {
-      font-weight: 600;
-      color: #198754;
-      text-align: center;
-    }
-    .total-row {
-      background-color: #e9ecef;
-      font-weight: bold;
-      font-size: 1.1em;
-    }
-    .header-section {
-      background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 25px;
-      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
-    }
-    .header-section h1 {
-      color: white;
-      margin: 0;
-      font-weight: 700;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-    }
-    .export-btn {
-      border: none;
-      border-radius: 6px;
-      padding: 12px 24px;
-      font-size: 16px;
-      font-weight: 600;
-      transition: all 0.3s;
-      margin-left: 10px;
-    }
-    .export-excel {
-      background: linear-gradient(135deg, #198754 0%, #146c43 100%);
-      box-shadow: 0 4px 8px rgba(25, 135, 84, 0.2);
-    }
-    .export-excel:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 12px rgba(25, 135, 84, 0.3);
-    }
-    .export-word {
-      background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
-      box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
-    }
-    .export-word:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 12px rgba(13, 110, 253, 0.3);
-    }
-    .table-container {
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-      margin-bottom: 30px;
-    }
-    .part-type {
-      font-weight: 500;
-      color: #495057;
-      text-align: center;
-    }
-    .col-index {
-      width: 60px;
-      text-align: center;
-      font-weight: 500;
-    }
-    .col-type {
-      width: 120px;
-    }
-    .col-model {
-      min-width: 250px;
-    }
-    .col-price {
-      width: 150px;
-    }
-    .col-total {
-      width: 150px;
-    }
-    .price-unit::after {
-      content: " 元";
-      color: #6c757d;
-    }
-    .input-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .input-group .form-control {
-      flex: 1;
-      text-align: center;
-    }
-    .input-group-text {
-      background-color: #e9ecef;
-      border: 1px solid #ced4da;
-      padding: 8px 12px;
-      font-size: 14px;
-      min-width: 60px;
-    }
-    .model-cell {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .model-input-container {
-      flex: 1;
-    }
-    .text-center {
-      text-align: center;
-    }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电脑装机配置清单</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2c6fd1 0%, #1e4db5 100%);
+            color: white;
+            padding: 25px 30px;
+            border-bottom: 4px solid #1a3f8c;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        h1 i {
+            margin-right: 12px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background-color: #f9fafc;
+            border-bottom: 1px solid #eaeef5;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .primary-btn {
+            background-color: #2c6fd1;
+            color: white;
+        }
+        
+        .primary-btn:hover {
+            background-color: #1e5ab8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(44, 111, 209, 0.3);
+        }
+        
+        .secondary-btn {
+            background-color: #f0f4ff;
+            color: #2c6fd1;
+            border: 1px solid #d0ddf5;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #e1e9ff;
+        }
+        
+        .danger-btn {
+            background-color: #ff4757;
+            color: white;
+        }
+        
+        .danger-btn:hover {
+            background-color: #ff3742;
+        }
+        
+        .success-btn {
+            background-color: #2ed573;
+            color: white;
+        }
+        
+        .success-btn:hover {
+            background-color: #25c464;
+        }
+        
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 16px;
+        }
+        
+        .total-price {
+            font-weight: 600;
+            color: #2c6fd1;
+            font-size: 20px;
+        }
+        
+        .table-container {
+            padding: 20px 30px 30px;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        thead {
+            background-color: #f1f5fd;
+        }
+        
+        /* 网页表头行高固定为50px */
+        th {
+            padding: 0 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #e1e8f0;
+            font-size: 16px;
+            height: 50px; /* 网页表头行高固定为50px */
+            vertical-align: middle;
+        }
+        
+        /* 网页表格内容行高固定为40px */
+        td {
+            padding: 0 15px;
+            border-bottom: 1px solid #eef2f7;
+            height: 40px; /* 网页表格内容行高固定为40px */
+            vertical-align: middle;
+        }
+        
+        tbody tr:hover {
+            background-color: #f9fbfe;
+        }
+        
+        .part-type {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d9e6;
+            border-radius: 4px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #2c6fd1;
+            box-shadow: 0 0 0 2px rgba(44, 111, 209, 0.1);
+        }
+        
+        .price-input {
+            text-align: right;
+        }
+        
+        .serial {
+            width: 60px;
+            text-align: center;
+            font-weight: 500;
+            color: #5a6c7d;
+        }
+        
+        .part-type-col {
+            width: 180px;
+        }
+        
+        .model-col {
+            min-width: 300px;
+        }
+        
+        .price-col {
+            width: 150px;
+        }
+        
+        .actions-col {
+            width: 100px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            color: #5a6c7d;
+            padding: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .action-btn:hover {
+            color: #2c6fd1;
+        }
+        
+        .total-row {
+            background-color: #f8fafd;
+            font-weight: 600;
+        }
+        
+        .total-row td {
+            padding: 0 15px;
+            font-size: 16px;
+            height: 50px; /* 总计行也使用较高行高 */
+        }
+        
+        .footer {
+            padding: 20px 30px;
+            background-color: #f9fafc;
+            border-top: 1px solid #eaeef5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #5a6c7d;
+        }
+        
+        .export-note {
+            font-size: 14px;
+            color: #7b8a9b;
+        }
+        
+        .export-note i {
+            color: #2c6fd1;
+            margin-right: 5px;
+        }
+        
+        .error {
+            border-color: #ff4757 !important;
+        }
+        
+        .error-message {
+            color: #ff4757;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 8px;
+            }
+            
+            header, .controls, .table-container, .footer {
+                padding: 15px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .button-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            th, td {
+                padding: 0 8px;
+            }
+            
+            /* 移动端保持相同的行高设置 */
+            th {
+                height: 50px; /* 移动端表头行高 */
+            }
+            
+            td {
+                height: 40px; /* 移动端表格内容行高 */
+            }
+            
+            .serial {
+                width: 40px;
+            }
+            
+            .part-type-col {
+                width: 120px;
+            }
+            
+            .model-col {
+                min-width: 200px;
+            }
+        }
+        
+        .empty-row {
+            text-align: center;
+            color: #7b8a9b;
+            height: 40px; /* 空行也使用相同的行高 */
+        }
+        
+        .delete-btn {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background-color: #ff4757;
+        }
+    </style>
 </head>
-<body class="bg-light">
-  <div class="container my-5">
-    <!-- 标题区域 -->
-    <div class="header-section d-flex justify-content-between align-items-center">
-      <h1 class="mb-0">电脑装机配置清单</h1>
-      <div class="btn-group">
-        <button id="exportExcel" class="btn export-btn export-excel">
-          <i class="fas fa-file-excel me-2"></i>导出为Excel
-        </button>
-        <button id="exportWord" class="btn export-btn export-word">
-          <i class="fas fa-file-word me-2"></i>导出为Word
-        </button>
-      </div>
-    </div>
-
-    <!-- 配置表格 -->
-    <div class="table-container">
-      <table class="table table-hover mb-0" id="configTable">
-        <thead>
-          <tr>
-            <th class="col-index text-center">序号</th>
-            <th class="col-type text-center">配件类型</th>
-            <th class="col-model text-center">型号（点击型号可跳转商品页）</th>
-            <th class="col-price text-center">单价（元）</th>
-            <th class="col-total text-center">总价（元）</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- 预设14种配件（可根据需要扩展） -->
-          <tr>
-            <td class="col-index text-center">1</td>
-            <td class="part-type text-center">CPU</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：Intel i7-13700K" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">2</td>
-            <td class="part-type text-center">CPU散热器</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：猫头鹰 NH-D15" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">3</td>
-            <td class="part-type text-center">主板</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：华硕 ROG Z790" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">4</td>
-            <td class="part-type text-center">内存</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：金士顿 32GB DDR5" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">5</td>
-            <td class="part-type text-center">硬盘（主）</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：三星 980 PRO 1TB" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">6</td>
-            <td class="part-type text-center">硬盘（副）</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：西数蓝盘 2TB" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">7</td>
-            <td class="part-type text-center">显卡</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：NVIDIA RTX 4070 Ti" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">8</td>
-            <td class="part-type text-center">电源</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：海韵 850W" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">9</td>
-            <td class="part-type text-center">机箱</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：联力 包豪斯 O11" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">10</td>
-            <td class="part-type text-center">机箱风扇</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：ARCTIC P12" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">11</td>
-            <td class="part-type text-center">键盘</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：CHERRY MX3.0S" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">12</td>
-            <td class="part-type text-center">鼠标</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：罗技 G502" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">13</td>
-            <td class="part-type text-center">显示器</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：戴尔 S2721DGF" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-          
-          <tr>
-            <td class="col-index text-center">14</td>
-            <td class="part-type text-center">音响</td>
-            <td>
-              <div class="model-cell">
-                <div class="model-input-container">
-                  <input type="text" class="form-control model-input" placeholder="例如：漫步者 R1080BT" />
-                </div>
-              </div>
-            </td>
-            <td>
-              <div class="input-group justify-content-center">
-                <input type="number" step="1" min="0" class="form-control price-input text-center" placeholder="0" />
-                <span class="input-group-text">元</span>
-              </div>
-            </td>
-            <td class="text-center"><span class="total-item price-unit">0</span></td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr class="total-row">
-            <td colspan="3" class="text-end fw-bold">总计：</td>
-            <td colspan="2" class="text-center">
-              <span id="totalPrice" class="fw-bold fs-5 text-success price-unit">0</span>
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <!-- 使用说明 -->
-    <div class="alert alert-info mt-4">
-      <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>使用说明</h5>
-      <ul class="mb-0">
-        <li>在"型号"列输入配件型号，点击型号可跳转到京东搜索页面</li>
-        <li>在"单价"列输入价格（<strong>整数金额，无需小数点</strong>），总价将自动计算</li>
-        <li>点击"导出为Excel"按钮可将配置清单导出为Excel文件</li>
-        <li>点击"导出为Word"按钮可将配置清单导出为Word文档</li>
-        <li>导出时<strong>只导出型号和单价都有内容的行</strong>，空白行不会导出</li>
-        <li>如需添加更多配件，可复制表格行并修改配件类型</li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- 引入JS库：Bootstrap、jQuery、SheetJS（导出Excel） -->
-  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- 引入docx库用于生成Word文档 -->
-  <script src="https://unpkg.com/docx@8.0.0/build/index.js"></script>
-  <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-
-  <script>
-    // 计算单个配件的总价（单价 × 1，因为数量为1）
-    function calculateItemTotal(row) {
-      const priceInput = $(row).find(".price-input");
-      const price = parseFloat(priceInput.val()) || 0;
-      const totalItem = $(row).find(".total-item");
-      totalItem.text(price.toFixed(0));
-      
-      // 实时格式化单价显示
-      if (price > 0) {
-        priceInput.val(parseInt(price));
-      }
-    }
-
-    // 计算所有配件的合计总价
-    function calculateTotal() {
-      let total = 0;
-      $(".total-item").each(function () {
-        total += parseFloat($(this).text()) || 0;
-      });
-      $("#totalPrice").text(total.toFixed(0));
-    }
-
-    // 型号输入框添加超链接（点击跳转商品页）
-    function addModelLink() {
-      $(".model-input").each(function () {
-        const input = $(this);
-        const model = input.val().trim();
-        const container = input.closest('.model-input-container');
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-desktop"></i> 电脑装机配置清单</h1>
+            <p class="subtitle">填写您的电脑配件信息，系统将自动计算总价并支持导出到Word文档</p>
+        </header>
         
-        if (model && !input.is(":hidden")) {
-          // 示例：跳转到京东搜索页（可替换为实际商品链接）
-          const url = `https://search.jd.com/Search?keyword=${encodeURIComponent(model)}`;
-          container.html(`<a href="${url}" target="_blank" class="model-link text-center d-block">${model}</a>`);
-        }
-      });
-    }
-
-    // 获取有效的数据行（型号和单价都有内容）
-    function getValidData() {
-      const data = [];
-      // 表头
-      data.push(["序号", "配件类型", "型号", "单价（元）", "总价（元）"]);
-      
-      let validRowCount = 0;
-      
-      // 表格内容
-      $("#configTable tbody tr").each(function () {
-        const row = $(this);
-        const index = row.find("td:eq(0)").text().trim();
-        const type = row.find(".part-type").text().trim();
-        const modelCell = row.find(".model-input-container");
-        const model = modelCell.find("a").text() || modelCell.find("input").val() || "";
-        const price = row.find(".price-input").val() || "0";
-        const total = row.find(".total-item").text().trim();
+        <div class="controls">
+            <div class="button-group">
+                <button class="primary-btn" id="addRowBtn">
+                    <i class="fas fa-plus"></i> 添加配件
+                </button>
+                <button class="secondary-btn" id="resetBtn">
+                    <i class="fas fa-redo"></i> 重置
+                </button>
+                <button class="success-btn" id="exportBtn">
+                    <i class="fas fa-file-word"></i> 导出到Word
+                </button>
+            </div>
+            
+            <div class="stats">
+                <div>已配置项目: <span id="configuredCount">0</span>/<span id="totalCount">14</span></div>
+                <div>总计: <span class="total-price" id="totalPrice">0</span> 元</div>
+            </div>
+        </div>
         
-        // 只导出型号和单价都有内容的行
-        if (model && price && price !== "0") {
-          validRowCount++;
-          data.push([validRowCount.toString(), type, model, price, total]);
+        <div class="table-container">
+            <table id="configTable">
+                <thead>
+                    <tr>
+                        <th class="serial">序号</th>
+                        <th class="part-type-col">配件类型</th>
+                        <th class="model-col">型号</th>
+                        <th class="price-col">单价(元)</th>
+                        <th class="actions-col">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 表格行将通过JavaScript动态生成 -->
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3" style="text-align: right;">合计</td>
+                        <td id="totalCell">0</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <div class="export-note">
+                <i class="fas fa-info-circle"></i> 提示：只有型号和单价都有输入内容的行才会被导出到Word文档
+            </div>
+            <div>© 2026 电脑装机配置工具</div>
+        </div>
+    </div>
+
+    <script>
+        // 初始配置数据
+        const initialConfig = [
+            { id: 1, type: "CPU", model: "", price: "" },
+            { id: 2, type: "CPU散热器", model: "", price: "" },
+            { id: 3, type: "主板", model: "", price: "" },
+            { id: 4, type: "内存", model: "", price: "" },
+            { id: 5, type: "硬盘(主)", model: "", price: "" },
+            { id: 6, type: "硬盘(副)", model: "", price: "" },
+            { id: 7, type: "显卡", model: "", price: "" },
+            { id: 8, type: "电源", model: "", price: "" },
+            { id: 9, type: "机箱", model: "", price: "" },
+            { id: 10, type: "机箱风扇", model: "", price: "" },
+            { id: 11, type: "键盘", model: "", price: "" },
+            { id: 12, type: "鼠标", model: "", price: "" },
+            { id: 13, type: "显示器", model: "", price: "" },
+            { id: 14, type: "音响", model: "", price: "" }
+        ];
+
+        // 当前配置数据
+        let configData = JSON.parse(JSON.stringify(initialConfig));
+        let nextId = 15; // 用于新增行的ID
+
+        // DOM元素
+        const tableBody = document.getElementById('tableBody');
+        const totalPriceElement = document.getElementById('totalPrice');
+        const totalCell = document.getElementById('totalCell');
+        const configuredCountElement = document.getElementById('configuredCount');
+        const totalCountElement = document.getElementById('totalCount');
+        const addRowBtn = document.getElementById('addRowBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const exportBtn = document.getElementById('exportBtn');
+
+        // 初始化表格
+        function initTable() {
+            tableBody.innerHTML = '';
+            totalCountElement.textContent = configData.length;
+            
+            configData.forEach(item => {
+                addRowToTable(item);
+            });
+            
+            updateStats();
         }
-      });
-      
-      // 如果有有效数据，添加合计行
-      if (validRowCount > 0) {
-        data.push(["合计", "", "", "", $("#totalPrice").text()]);
-      }
-      
-      return data;
-    }
 
-    // 导出为Excel
-    async function exportToExcel() {
-      // 先转换所有型号输入框为链接
-      addModelLink();
-      
-      // 获取有效数据
-      const data = getValidData();
-      
-      if (data.length <= 1) {
-        alert("没有找到有效的配置数据，请至少输入一个配件的型号和单价。");
-        return;
-      }
-      
-      // 生成Excel工作表
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      
-      // 设置列宽
-      const wscols = [
-        {wch: 8},  // 序号列宽
-        {wch: 12}, // 配件类型列宽
-        {wch: 30}, // 型号列宽
-        {wch: 12}, // 单价列宽
-        {wch: 12}  // 总价列宽
-      ];
-      ws['!cols'] = wscols;
-      
-      // 设置单元格居中
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for(let R = range.s.r; R <= range.e.r; ++R) {
-        for(let C = range.s.c; C <= range.e.c; ++C) {
-          const cell_address = {c:C, r:R};
-          const cell_ref = XLSX.utils.encode_cell(cell_address);
-          
-          if(!ws[cell_ref]) continue;
-          
-          // 设置水平居中和垂直居中
-          ws[cell_ref].s = ws[cell_ref].s || {};
-          ws[cell_ref].s.alignment = ws[cell_ref].s.alignment || {};
-          ws[cell_ref].s.alignment.horizontal = 'center';
-          ws[cell_ref].s.alignment.vertical = 'center';
-          
-          // 设置标题行加粗
-          if(R === 0) {
-            ws[cell_ref].s.font = ws[cell_ref].s.font || {};
-            ws[cell_ref].s.font.bold = true;
-          }
-          
-          // 设置序号和配件类型行加粗
-          if(R > 0 && C <= 1) { // 第2列（序号）和第3列（配件类型）
-            ws[cell_ref].s.font = ws[cell_ref].s.font || {};
-            ws[cell_ref].s.font.bold = true;
-          }
-          
-          // 设置数值格式
-          if(C >= 3) { // 第4列（单价）和第5列（总价）设为数值格式
-            ws[cell_ref].t = 'n';
-            ws[cell_ref].z = '#,##0';
-          }
+        // 添加行到表格
+        function addRowToTable(item) {
+            const row = document.createElement('tr');
+            row.id = `row-${item.id}`;
+            
+            // 创建序号单元格
+            const serialCell = document.createElement('td');
+            serialCell.className = 'serial';
+            serialCell.textContent = item.id;
+            
+            // 创建配件类型单元格
+            const typeCell = document.createElement('td');
+            typeCell.className = 'part-type';
+            typeCell.textContent = item.type;
+            
+            // 创建型号输入单元格
+            const modelCell = document.createElement('td');
+            const modelInput = document.createElement('input');
+            modelInput.type = 'text';
+            modelInput.className = 'model-input';
+            modelInput.value = item.model;
+            modelInput.placeholder = '请输入型号';
+            modelInput.dataset.id = item.id;
+            modelCell.appendChild(modelInput);
+            
+            // 创建单价输入单元格
+            const priceCell = document.createElement('td');
+            const priceInput = document.createElement('input');
+            priceInput.type = 'text';
+            priceInput.className = 'price-input';
+            priceInput.value = item.price;
+            priceInput.placeholder = '0';
+            priceInput.dataset.id = item.id;
+            priceCell.appendChild(priceInput);
+            
+            // 添加错误消息元素
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.id = `error-${item.id}`;
+            priceCell.appendChild(errorElement);
+            
+            // 创建操作单元格 - 所有行都有删除按钮
+            const actionsCell = document.createElement('td');
+            actionsCell.className = 'actions-col';
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> 删除';
+            deleteBtn.title = '删除此行';
+            deleteBtn.onclick = () => deleteRow(item.id);
+            actionsCell.appendChild(deleteBtn);
+            
+            // 组装行
+            row.appendChild(serialCell);
+            row.appendChild(typeCell);
+            row.appendChild(modelCell);
+            row.appendChild(priceCell);
+            row.appendChild(actionsCell);
+            
+            // 添加到表格
+            tableBody.appendChild(row);
+            
+            // 添加事件监听
+            modelInput.addEventListener('input', handleModelInput);
+            priceInput.addEventListener('input', handlePriceInput);
+            priceInput.addEventListener('blur', validatePrice);
         }
-      }
-      
-      // 生成Excel工作簿
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "装机配置清单");
-      // 导出Excel
-      const date = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, `电脑装机配置清单_${date}.xlsx`);
-    }
 
-    // 导出为Word
-    async function exportToWord() {
-      // 先转换所有型号输入框为链接
-      addModelLink();
-      
-      // 获取有效数据
-      const data = getValidData();
-      
-      if (data.length <= 1) {
-        alert("没有找到有效的配置数据，请至少输入一个配件的型号和单价。");
-        return;
-      }
-      
-      const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, WidthType, BorderStyle } = docx;
-      
-      // 创建表格
-      const rows = [];
-      
-      // 表头行
-      const headerCells = data[0].map(cellText => 
-        new TableCell({
-          children: [
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: cellText,
-                  bold: true
-                })
-              ],
-              alignment: AlignmentType.CENTER
-            })
-          ],
-          shading: {
-            fill: "0D6EFD",
-            color: "auto"
-          }
-        })
-      );
-      rows.push(new TableRow({
-        children: headerCells,
-        tableHeader: true
-      }));
-      
-      // 数据行
-      for (let i = 1; i < data.length - 1; i++) {
-        const rowData = data[i];
-        const cells = rowData.map((cellText, index) => {
-          const isBold = index <= 1; // 序号和配件类型加粗
-          return new TableCell({
-            children: [
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: cellText,
-                    bold: isBold
-                  })
-                ],
-                alignment: AlignmentType.CENTER
-              })
-            ],
-            shading: i % 2 === 0 ? { fill: "F8F9FA" } : undefined
-          });
-        });
-        rows.push(new TableRow({ children: cells }));
-      }
-      
-      // 合计行
-      const totalRowData = data[data.length - 1];
-      const totalCells = totalRowData.map((cellText, index) => 
-        new TableCell({
-          children: [
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: cellText,
-                  bold: true
-                })
-              ],
-              alignment: AlignmentType.CENTER
-            })
-          ],
-          shading: { fill: "E9ECEF" }
-        })
-      );
-      rows.push(new TableRow({ children: totalCells }));
-      
-      const table = new Table({
-        rows: rows,
-        width: {
-          size: 100,
-          type: WidthType.PERCENTAGE
-        },
-        borders: {
-          top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-          bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-          left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-          right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-          insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
-          insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" }
-        },
-        columnWidths: [1000, 1500, 3500, 1500, 1500]
-      });
-      
-      // 创建文档
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: [
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "电脑装机配置清单",
-                  bold: true,
-                  size: 32
-                })
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 400 }
-            }),
-            table
-          ]
-        }]
-      });
-      
-      // 生成并下载Word文档
-      const blob = await Packer.toBlob(doc);
-      const date = new Date().toISOString().split('T')[0];
-      saveAs(blob, `电脑装机配置清单_${date}.docx`);
-    }
-
-    // 初始化事件监听
-    $(document).ready(function () {
-      // 单价输入变化时，重新计算单个总价和合计
-      $(".price-input").on("input", function () {
-        // 确保输入为整数
-        let value = $(this).val();
-        if (value && !/^\d+$/.test(value)) {
-          value = value.replace(/[^\d]/g, '');
-          $(this).val(value);
+        // 处理型号输入
+        function handleModelInput(e) {
+            const id = parseInt(e.target.dataset.id);
+            const item = configData.find(item => item.id === id);
+            if (item) {
+                item.model = e.target.value.trim();
+                updateStats();
+            }
         }
-        calculateItemTotal($(this).closest("tr"));
-        calculateTotal();
-      });
 
-      // 单价输入框失去焦点时确保为整数
-      $(".price-input").on("blur", function() {
-        let value = $(this).val();
-        if (value) {
-          value = parseInt(value) || 0;
-          $(this).val(value);
-          calculateItemTotal($(this).closest("tr"));
-          calculateTotal();
+        // 处理单价输入
+        function handlePriceInput(e) {
+            const id = parseInt(e.target.dataset.id);
+            const item = configData.find(item => item.id === id);
+            if (item) {
+                // 只允许输入数字
+                const value = e.target.value.replace(/[^\d]/g, '');
+                e.target.value = value;
+                item.price = value;
+                
+                // 清除错误状态
+                e.target.classList.remove('error');
+                const errorElement = document.getElementById(`error-${id}`);
+                errorElement.style.display = 'none';
+                
+                updateTotal();
+                updateStats();
+            }
         }
-      });
 
-      // 型号输入框聚焦时选中文本
-      $(".model-input").on("focus", function() {
-        $(this).select();
-      });
+        // 验证单价
+        function validatePrice(e) {
+            const id = parseInt(e.target.dataset.id);
+            const value = e.target.value;
+            const errorElement = document.getElementById(`error-${id}`);
+            
+            if (value && !/^\d+$/.test(value)) {
+                e.target.classList.add('error');
+                errorElement.textContent = '请输入整数';
+                errorElement.style.display = 'block';
+                return false;
+            } else if (value && parseInt(value) < 0) {
+                e.target.classList.add('error');
+                errorElement.textContent = '单价不能为负数';
+                errorElement.style.display = 'block';
+                return false;
+            } else {
+                e.target.classList.remove('error');
+                errorElement.style.display = 'none';
+                return true;
+            }
+        }
 
-      // 导出Excel按钮点击事件
-      $("#exportExcel").on("click", function () {
-        exportToExcel();
-      });
+        // 更新总计
+        function updateTotal() {
+            let total = 0;
+            configData.forEach(item => {
+                if (item.price && !isNaN(parseInt(item.price))) {
+                    total += parseInt(item.price);
+                }
+            });
+            
+            totalPriceElement.textContent = total.toLocaleString();
+            totalCell.textContent = total.toLocaleString() + ' 元';
+        }
 
-      // 导出Word按钮点击事件
-      $("#exportWord").on("click", function () {
-        exportToWord();
-      });
+        // 更新统计信息
+        function updateStats() {
+            const configured = configData.filter(item => item.model && item.price).length;
+            configuredCountElement.textContent = configured;
+            updateTotal();
+        }
 
-      // 点击型号链接时，允许编辑
-      $(document).on("dblclick", ".model-link", function(e) {
-        e.preventDefault();
-        const link = $(this);
-        const model = link.text();
-        const container = link.parent();
-        container.html(`<input type="text" class="form-control model-input" value="${model}" />`);
-        container.find(".model-input").focus().select();
-      });
+        // 添加新行
+        function addNewRow() {
+            const newItem = {
+                id: nextId++,
+                type: "其他配件",
+                model: "",
+                price: ""
+            };
+            
+            configData.push(newItem);
+            addRowToTable(newItem);
+            updateStats();
+            
+            // 滚动到新行
+            const newRow = document.getElementById(`row-${newItem.id}`);
+            newRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // 聚焦到型号输入
+            const modelInput = newRow.querySelector('.model-input');
+            modelInput.focus();
+        }
 
-      // 页面加载时计算初始总价（默认0）
-      calculateTotal();
-    });
-  </script>
+        // 删除行
+        function deleteRow(id) {
+            if (configData.length <= 1) {
+                alert('至少需要保留一行配置');
+                return;
+            }
+            
+            if (confirm('确定要删除这一行配置吗？')) {
+                configData = configData.filter(item => item.id !== id);
+                const row = document.getElementById(`row-${id}`);
+                if (row) row.remove();
+                updateStats();
+            }
+        }
+
+        // 重置表格
+        function resetTable() {
+            if (confirm('确定要重置所有数据吗？此操作不可撤销。')) {
+                configData = JSON.parse(JSON.stringify(initialConfig));
+                nextId = 15;
+                initTable();
+            }
+        }
+
+        // 导出到Word
+        function exportToWord() {
+            // 过滤出有内容的行
+            const validRows = configData.filter(item => item.model && item.price);
+            
+            if (validRows.length === 0) {
+                alert('没有可导出的数据，请至少填写一行完整的型号和单价信息。');
+                return;
+            }
+            
+            // 计算总计
+            const total = validRows.reduce((sum, item) => sum + parseInt(item.price), 0);
+            
+            // 创建Word文档的HTML内容
+            const htmlContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body {
+                        font-family: 'Microsoft YaHei', sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    .document-title {
+                        text-align: center;
+                        color: #2c6fd1;
+                        font-size: 24px;
+                        margin-bottom: 20px;
+                        padding-bottom: 10px;
+                        border-bottom: 2px solid #2c6fd1;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        table-layout: fixed;
+                        font-size: 12pt;
+                        margin-top: 10px;
+                    }
+                    th {
+                        background-color: #f1f5fd;
+                        padding: 0 8px;
+                        text-align: center; /* 表头单元格居中 */
+                        font-weight: bold;
+                        border: 1px solid #ddd;
+                        height: 50px; /* Word文档表头行高固定为50px */
+                        vertical-align: middle; /* 垂直居中 */
+                    }
+                    td {
+                        padding: 0 8px;
+                        border: 1px solid #ddd;
+                        text-align: center; /* 表格内容单元格居中 */
+                        vertical-align: middle; /* 垂直居中 */
+                        height: 40px; /* Word文档表格内容行高固定为40px */
+                    }
+                    .total-row {
+                        font-weight: bold;
+                        background-color: #f8fafd;
+                    }
+                    .total-row td {
+                        height: 50px; /* 总计行行高 */
+                    }
+                    .footer {
+                        text-align: right;
+                        margin-top: 30px;
+                        color: #666;
+                        font-size: 11pt;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1 class="document-title">电脑装机配置清单</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 8%">序号</th>
+                            <th style="width: 20%">配件类型</th>
+                            <th style="width: 52%">型号</th>
+                            <th style="width: 20%">单价(元)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${validRows.map((item, index) => `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${item.type}</td>
+                            <td>${item.model}</td>
+                            <td>${parseInt(item.price).toLocaleString()}</td>
+                        </tr>
+                        `).join('')}
+                        <tr class="total-row">
+                            <td colspan="3" style="text-align: right;">合计</td>
+                            <td>${total.toLocaleString()} 元</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="footer">
+                    生成时间: ${new Date().toLocaleString('zh-CN')} | 共 ${validRows.length} 项配置
+                </div>
+            </body>
+            </html>
+            `;
+            
+            // 创建Blob对象
+            const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword' });
+            
+            // 创建下载链接
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `电脑装机配置清单_${new Date().toISOString().slice(0, 10)}.doc`;
+            
+            // 触发下载
+            document.body.appendChild(a);
+            a.click();
+            
+            // 清理
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+            
+            alert(`成功导出 ${validRows.length} 项配置，总计 ${total.toLocaleString()} 元`);
+        }
+
+        // 事件监听
+        addRowBtn.addEventListener('click', addNewRow);
+        resetBtn.addEventListener('click', resetTable);
+        exportBtn.addEventListener('click', exportToWord);
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', initTable);
+    </script>
 </body>
 </html>
