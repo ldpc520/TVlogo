@@ -65,7 +65,6 @@
       font-weight: 600;
       color: #198754;
       text-align: center;
-      padding-right: 20px;
     }
     .total-row {
       background-color: #e9ecef;
@@ -86,18 +85,29 @@
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
     }
     .export-btn {
-      background: linear-gradient(135deg, #198754 0%, #146c43 100%);
       border: none;
       border-radius: 6px;
       padding: 12px 24px;
       font-size: 16px;
       font-weight: 600;
-      box-shadow: 0 4px 8px rgba(25, 135, 84, 0.2);
       transition: all 0.3s;
+      margin-left: 10px;
     }
-    .export-btn:hover {
+    .export-excel {
+      background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+      box-shadow: 0 4px 8px rgba(25, 135, 84, 0.2);
+    }
+    .export-excel:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(25, 135, 84, 0.3);
+    }
+    .export-word {
+      background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+      box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
+    }
+    .export-word:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(13, 110, 253, 0.3);
     }
     .table-container {
       background-color: white;
@@ -132,11 +142,6 @@
       content: " 元";
       color: #6c757d;
     }
-    .table-header-row {
-      background-color: #e9ecef;
-      font-weight: 600;
-      color: #495057;
-    }
     .input-group {
       display: flex;
       align-items: center;
@@ -164,6 +169,10 @@
     .text-center {
       text-align: center;
     }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -171,9 +180,14 @@
     <!-- 标题区域 -->
     <div class="header-section d-flex justify-content-between align-items-center">
       <h1 class="mb-0">电脑装机配置清单</h1>
-      <button id="exportExcel" class="btn export-btn">
-        <i class="fas fa-file-excel me-2"></i>导出为Excel
-      </button>
+      <div class="btn-group">
+        <button id="exportExcel" class="btn export-btn export-excel">
+          <i class="fas fa-file-excel me-2"></i>导出为Excel
+        </button>
+        <button id="exportWord" class="btn export-btn export-word">
+          <i class="fas fa-file-word me-2"></i>导出为Word
+        </button>
+      </div>
     </div>
 
     <!-- 配置表格 -->
@@ -474,6 +488,8 @@
         <li>在"型号"列输入配件型号，点击型号可跳转到京东搜索页面</li>
         <li>在"单价"列输入价格（<strong>整数金额，无需小数点</strong>），总价将自动计算</li>
         <li>点击"导出为Excel"按钮可将配置清单导出为Excel文件</li>
+        <li>点击"导出为Word"按钮可将配置清单导出为Word文档</li>
+        <li>导出时<strong>只导出型号和单价都有内容的行</strong>，空白行不会导出</li>
         <li>如需添加更多配件，可复制表格行并修改配件类型</li>
       </ul>
     </div>
@@ -483,6 +499,9 @@
   <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- 引入docx库用于生成Word文档 -->
+  <script src="https://unpkg.com/docx@8.0.0/build/index.js"></script>
+  <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 
   <script>
     // 计算单个配件的总价（单价 × 1，因为数量为1）
@@ -522,15 +541,14 @@
       });
     }
 
-    // 导出为Excel
-    function exportToExcel() {
-      // 先转换所有型号输入框为链接
-      addModelLink();
-      
-      // 构建Excel数据结构
+    // 获取有效的数据行（型号和单价都有内容）
+    function getValidData() {
       const data = [];
       // 表头
       data.push(["序号", "配件类型", "型号", "单价（元）", "总价（元）"]);
+      
+      let validRowCount = 0;
+      
       // 表格内容
       $("#configTable tbody tr").each(function () {
         const row = $(this);
@@ -540,11 +558,35 @@
         const model = modelCell.find("a").text() || modelCell.find("input").val() || "";
         const price = row.find(".price-input").val() || "0";
         const total = row.find(".total-item").text().trim();
-        data.push([index, type, model, price, total]);
+        
+        // 只导出型号和单价都有内容的行
+        if (model && price && price !== "0") {
+          validRowCount++;
+          data.push([validRowCount.toString(), type, model, price, total]);
+        }
       });
-      // 合计行
-      data.push(["合计", "", "", "", $("#totalPrice").text()]);
+      
+      // 如果有有效数据，添加合计行
+      if (validRowCount > 0) {
+        data.push(["合计", "", "", "", $("#totalPrice").text()]);
+      }
+      
+      return data;
+    }
 
+    // 导出为Excel
+    async function exportToExcel() {
+      // 先转换所有型号输入框为链接
+      addModelLink();
+      
+      // 获取有效数据
+      const data = getValidData();
+      
+      if (data.length <= 1) {
+        alert("没有找到有效的配置数据，请至少输入一个配件的型号和单价。");
+        return;
+      }
+      
       // 生成Excel工作表
       const ws = XLSX.utils.aoa_to_sheet(data);
       
@@ -567,7 +609,7 @@
           
           if(!ws[cell_ref]) continue;
           
-          // 设置水平居中
+          // 设置水平居中和垂直居中
           ws[cell_ref].s = ws[cell_ref].s || {};
           ws[cell_ref].s.alignment = ws[cell_ref].s.alignment || {};
           ws[cell_ref].s.alignment.horizontal = 'center';
@@ -575,6 +617,12 @@
           
           // 设置标题行加粗
           if(R === 0) {
+            ws[cell_ref].s.font = ws[cell_ref].s.font || {};
+            ws[cell_ref].s.font.bold = true;
+          }
+          
+          // 设置序号和配件类型行加粗
+          if(R > 0 && C <= 1) { // 第2列（序号）和第3列（配件类型）
             ws[cell_ref].s.font = ws[cell_ref].s.font || {};
             ws[cell_ref].s.font.bold = true;
           }
@@ -593,6 +641,136 @@
       // 导出Excel
       const date = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `电脑装机配置清单_${date}.xlsx`);
+    }
+
+    // 导出为Word
+    async function exportToWord() {
+      // 先转换所有型号输入框为链接
+      addModelLink();
+      
+      // 获取有效数据
+      const data = getValidData();
+      
+      if (data.length <= 1) {
+        alert("没有找到有效的配置数据，请至少输入一个配件的型号和单价。");
+        return;
+      }
+      
+      const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, AlignmentType, WidthType, BorderStyle } = docx;
+      
+      // 创建表格
+      const rows = [];
+      
+      // 表头行
+      const headerCells = data[0].map(cellText => 
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: cellText,
+                  bold: true
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            })
+          ],
+          shading: {
+            fill: "0D6EFD",
+            color: "auto"
+          }
+        })
+      );
+      rows.push(new TableRow({
+        children: headerCells,
+        tableHeader: true
+      }));
+      
+      // 数据行
+      for (let i = 1; i < data.length - 1; i++) {
+        const rowData = data[i];
+        const cells = rowData.map((cellText, index) => {
+          const isBold = index <= 1; // 序号和配件类型加粗
+          return new TableCell({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: cellText,
+                    bold: isBold
+                  })
+                ],
+                alignment: AlignmentType.CENTER
+              })
+            ],
+            shading: i % 2 === 0 ? { fill: "F8F9FA" } : undefined
+          });
+        });
+        rows.push(new TableRow({ children: cells }));
+      }
+      
+      // 合计行
+      const totalRowData = data[data.length - 1];
+      const totalCells = totalRowData.map((cellText, index) => 
+        new TableCell({
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: cellText,
+                  bold: true
+                })
+              ],
+              alignment: AlignmentType.CENTER
+            })
+          ],
+          shading: { fill: "E9ECEF" }
+        })
+      );
+      rows.push(new TableRow({ children: totalCells }));
+      
+      const table = new Table({
+        rows: rows,
+        width: {
+          size: 100,
+          type: WidthType.PERCENTAGE
+        },
+        borders: {
+          top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+          insideVertical: { style: BorderStyle.SINGLE, size: 1, color: "000000" }
+        },
+        columnWidths: [1000, 1500, 3500, 1500, 1500]
+      });
+      
+      // 创建文档
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "电脑装机配置清单",
+                  bold: true,
+                  size: 32
+                })
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 }
+            }),
+            table
+          ]
+        }]
+      });
+      
+      // 生成并下载Word文档
+      const blob = await Packer.toBlob(doc);
+      const date = new Date().toISOString().split('T')[0];
+      saveAs(blob, `电脑装机配置清单_${date}.docx`);
     }
 
     // 初始化事件监听
@@ -625,9 +803,14 @@
         $(this).select();
       });
 
-      // 导出按钮点击事件
+      // 导出Excel按钮点击事件
       $("#exportExcel").on("click", function () {
         exportToExcel();
+      });
+
+      // 导出Word按钮点击事件
+      $("#exportWord").on("click", function () {
+        exportToWord();
       });
 
       // 点击型号链接时，允许编辑
