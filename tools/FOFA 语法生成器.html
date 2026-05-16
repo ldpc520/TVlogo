@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>FOFA 语法生成器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+    body {
+        font-family: "Segoe UI", "PingFang SC", sans-serif;
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: #fff;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+    .card {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 24px;
+        width: 420px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    label {
+        display: block;
+        margin-top: 12px;
+        font-size: 14px;
+    }
+    select, input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 6px;
+        border-radius: 8px;
+        border: none;
+        outline: none;
+        font-size: 14px;
+    }
+    button {
+        width: 100%;
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-size: 15px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .primary {
+        background: #00d2ff;
+        color: #000;
+    }
+    .success {
+        background: #00ff95;
+        color: #000;
+    }
+    .result {
+        margin-top: 18px;
+        background: rgba(0,0,0,0.25);
+        padding: 12px;
+        border-radius: 8px;
+        word-break: break-all;
+        font-size: 13px;
+    }
+    a {
+        color: #00ffea;
+        text-decoration: none;
+    }
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>🛰️ FOFA 语法生成器</h2>
+
+<label>省份</label>
+<select id="province">
+    <option value="Sichuan">四川</option>
+    <option value="Guangdong">广东</option>
+    <option value="Zhejiang">浙江</option>
+    <option value="Jiangsu">江苏</option>
+    <option value="Beijing">北京</option>
+    <option value="Shanghai">上海</option>
+    <option value="Shandong">山东</option>
+    <option value="Henan">河南</option>
+    <option value="Shaanxi">陕西</option>
+</select>
+
+<label>运营商</label>
+<select id="isp">
+    <option value="Chinanet">电信 Chinanet</option>
+    <option value="CUCC">联通 CUCC</option>
+    <option value="CMCC">移动 CMCC</option>
+</select>
+
+<label>搜索类型</label>
+<select id="type">
+    <option value='udpxy'>udpxy 组播代理</option>
+    <option value='port="4020"'>组播端口 4020</option>
+    <option value='port="8000"'>IPTV 常见端口</option>
+    <option value=''>全部资产</option>
+</select>
+
+<button class="primary" onclick="gen()">生成 FOFA 语法</button>
+
+<div class="result" id="output"></div>
+
+<button class="success" onclick="copy()">复制语法</button>
+<button onclick="openFofa()">前往 FOFA 搜索</button>
+</div>
+
+<script>
+function gen() {
+    const p = document.getElementById("province").value;
+    const isp = document.getElementById("isp").value;
+    const t = document.getElementById("type").value;
+
+    let q = "";
+    if (t) q += `"${t}" && `;
+    q += `region="${p}" && org="${isp}"`;
+
+    document.getElementById("output").innerHTML =
+        `<b>FOFA 语法：</b><br>${q}`;
+}
+
+function copy() {
+    const txt = document.getElementById("output").innerText.replace("FOFA 语法：", "").trim();
+    navigator.clipboard.writeText(txt);
+    alert("已复制到剪贴板 ✅");
+}
+
+function openFofa() {
+    const txt = document.getElementById("output").innerText.replace("FOFA 语法：", "").trim();
+    window.open("https://fofa.info/result?qbase64=" + btoa(txt));
+}
+</script>
+
+</body>
+</html>
