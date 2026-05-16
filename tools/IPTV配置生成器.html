@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV 配置生成器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            font-size: 14px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 95vh;
+        }
+        
+        header {
+            background: linear-gradient(to right, #1677ff, #0a5fcc);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        header h1 {
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .form-section {
+            flex: 1;
+            padding: 20px;
+            border-right: 1px solid #eee;
+            overflow-y: auto;
+        }
+        
+        .output-section {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+            font-size: 13px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-wrapper i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px 12px 10px 36px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            background-color: #fafafa;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #1677ff;
+            background-color: white;
+            box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .generate-btn {
+            background: linear-gradient(to right, #1677ff, #0a5fcc);
+            color: white;
+        }
+        
+        .copy-btn {
+            background: linear-gradient(to right, #52c41a, #389e0d);
+            color: white;
+        }
+        
+        .clear-btn {
+            background: linear-gradient(to right, #ff4d4f, #cf1322);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .output-header h3 {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ccc;
+        }
+        
+        .status-dot.active {
+            background-color: #52c41a;
+        }
+        
+        pre {
+            flex: 1;
+            padding: 16px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #333;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #eaeaea;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .info-bar {
+            background-color: #e6f7ff;
+            border-left: 3px solid #1677ff;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #555;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .form-section {
+                border-right: none;
+                border-bottom: 1px solid #eee;
+                max-height: 50vh;
+            }
+            
+            .output-section {
+                max-height: 40vh;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .form-row {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            header h1 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-satellite-dish"></i> IPTV 配置生成器</h1>
+            <div style="font-size: 13px; opacity: 0.9;">快速生成 · 自动识别 · 一键复制</div>
+        </header>
+        
+        <div class="main-content">
+            <!-- 左侧表单区域 -->
+            <div class="form-section">
+                <div class="info-bar">
+                    <i class="fas fa-info-circle"></i> 输入IP地址后自动获取归属地，所有配置项均可自定义
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskIndex"><i class="fas fa-hashtag"></i> 任务序号</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-list-ol"></i>
+                            <input type="number" id="taskIndex" value="7" min="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ip"><i class="fas fa-globe"></i> IP 地址</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-network-wired"></i>
+                            <input type="text" id="ip" placeholder="例如：171.213.140.209">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name"><i class="fas fa-map-marker-alt"></i> 归属地</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-location-dot"></i>
+                            <input type="text" id="name" readonly placeholder="输入IP后自动获取">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="port"><i class="fas fa-plug"></i> 端口</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-ethernet"></i>
+                            <input type="text" id="port" value="8188">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="multicast"><i class="fas fa-broadcast-tower"></i> 组播地址</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-wifi"></i>
+                            <input type="text" id="multicast" value="239.77.0.1:5146">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="enabled"><i class="fas fa-power-off"></i> 是否启用</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-toggle-on"></i>
+                            <select id="enabled">
+                                <option value="no">否</option>
+                                <option value="yes">是</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="start_c"><i class="fas fa-arrow-up"></i> 起始 C 段</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-arrow-up-9-1"></i>
+                            <input type="number" id="start_c" value="1" min="1" max="255">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="end_c"><i class="fas fa-arrow-down"></i> 结束 C 段</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-arrow-down-9-1"></i>
+                            <input type="number" id="end_c" value="255" min="1" max="255">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button class="generate-btn" onclick="generateConfig()">
+                        <i class="fas fa-cog"></i> 生成配置
+                    </button>
+                    <button class="copy-btn" onclick="copyConfig()">
+                        <i class="far fa-copy"></i> 复制配置
+                    </button>
+                    <button class="clear-btn" onclick="clearForm()">
+                        <i class="fas fa-trash-alt"></i> 清空
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 右侧输出区域 -->
+            <div class="output-section">
+                <div class="output-header">
+                    <h3><i class="fas fa-file-code"></i> 配置预览</h3>
+                    <div class="status">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusText">等待生成</span>
+                    </div>
+                </div>
+                <pre id="output"># 配置将在此处显示
+# 1. 输入IP地址自动获取归属地
+# 2. 调整其他参数
+# 3. 点击"生成配置"按钮</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ipInput = document.getElementById("ip");
+        const nameInput = document.getElementById("name");
+        const statusDot = document.getElementById("statusDot");
+        const statusText = document.getElementById("statusText");
+        const output = document.getElementById("output");
+        
+        // 使用多个IP查询API，提高可靠性
+        async function getIpLocation(ip) {
+            // 方法1: 使用 ip-api.com (支持中文)
+            try {
+                const response = await fetch(`https://ip-api.com/json/${ip}?fields=status,message,country,regionName,city,isp&lang=zh-CN`);
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    let location = "";
+                    if (data.country === "中国") {
+                        location = `${data.regionName} ${data.city} ${data.isp || ''}`;
+                    } else {
+                        location = `${data.country} ${data.regionName} ${data.city}`;
+                    }
+                    return location.trim();
+                }
+            } catch (error) {
+                console.log("ip-api.com 查询失败，尝试备用方案");
+            }
+            
+            // 方法2: 使用纯真IP库查询 (模拟)
+            const mockLocations = {
+                "171.213": "四川成都电信",
+                "14.216": "广东东莞电信",
+                "125.66": "四川自贡电信",
+                "219.131": "广东惠州电信",
+                "113.101": "广东电信"
+            };
+            
+            for (const prefix in mockLocations) {
+                if (ip.startsWith(prefix)) {
+                    return mockLocations[prefix];
+                }
+            }
+            
+            return "未知归属地";
+        }
+        
+        // IP地址输入后自动查询归属地
+        let debounceTimer;
+        ipInput.addEventListener("input", function() {
+            clearTimeout(debounceTimer);
+            const ip = this.value.trim();
+            
+            if (!ip) {
+                nameInput.value = "";
+                updateStatus("等待输入", false);
+                return;
+            }
+            
+            // 简单验证IP格式
+            const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+            if (!ipPattern.test(ip)) {
+                nameInput.value = "IP格式不正确";
+                updateStatus("IP格式错误", false);
+                return;
+            }
+            
+            // 显示加载状态
+            nameInput.value = "查询中...";
+            updateStatus("查询中", false);
+            
+            // 防抖处理，避免频繁请求
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const location = await getIpLocation(ip);
+                    nameInput.value = location;
+                    updateStatus("查询成功", true);
+                } catch (error) {
+                    nameInput.value = "查询失败";
+                    updateStatus("查询失败", false);
+                }
+            }, 800);
+        });
+        
+        function updateStatus(text, isActive) {
+            statusText.textContent = text;
+            if (isActive) {
+                statusDot.classList.add("active");
+            } else {
+                statusDot.classList.remove("active");
+            }
+        }
+        
+        function generateConfig() {
+            const taskIndex = document.getElementById("taskIndex").value;
+            const name = document.getElementById("name").value;
+            const ip = document.getElementById("ip").value;
+            const port = document.getElementById("port").value;
+            const multicast = document.getElementById("multicast").value;
+            const startC = document.getElementById("start_c").value;
+            const endC = document.getElementById("end_c").value;
+            const enabled = document.getElementById("enabled").value;
+            
+            if (!ip || !name || name === "查询中..." || name === "IP格式不正确") {
+                alert("请先输入有效的IP地址并获取归属地");
+                return;
+            }
+            
+            const config = `[Task${taskIndex}]
+name = ${name}
+ip = ${ip}
+port = ${port}
+multicast = ${multicast}
+start_c = ${startC}
+end_c = ${endC}
+enabled = ${enabled}`;
+            
+            output.textContent = config;
+            updateStatus("配置已生成", true);
+        }
+        
+        function copyConfig() {
+            const configText = output.textContent;
+            
+            if (!configText || configText.includes("# 配置将在此处显示")) {
+                alert("请先生成配置");
+                return;
+            }
+            
+            navigator.clipboard.writeText(configText).then(() => {
+                alert("配置已复制到剪贴板！");
+                updateStatus("已复制", true);
+            }).catch(err => {
+                console.error('复制失败: ', err);
+                alert("复制失败，请手动选择并复制");
+            });
+        }
+        
+        function clearForm() {
+            document.getElementById("taskIndex").value = "7";
+            document.getElementById("ip").value = "";
+            document.getElementById("name").value = "";
+            document.getElementById("port").value = "8188";
+            document.getElementById("multicast").value = "239.77.0.1:5146";
+            document.getElementById("start_c").value = "1";
+            document.getElementById("end_c").value = "255";
+            document.getElementById("enabled").value = "no";
+            output.textContent = `# 配置将在此处显示
+# 1. 输入IP地址自动获取归属地
+# 2. 调整其他参数
+# 3. 点击"生成配置"按钮`;
+            updateStatus("等待生成", false);
+        }
+        
+        // 初始化状态
+        updateStatus("等待生成", false);
+    </script>
+</body>
+</html>
