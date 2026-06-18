@@ -1,144 +1,783 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<title>FOFA 语法生成器</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<style>
-    body {
-        font-family: "Segoe UI", "PingFang SC", sans-serif;
-        background: linear-gradient(135deg, #1e3c72, #2a5298);
-        color: #fff;
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-    }
-    .card {
-        background: rgba(255,255,255,0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 24px;
-        width: 420px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    }
-    h2 {
-        text-align: center;
-        margin-bottom: 20px;
-    }
-    label {
-        display: block;
-        margin-top: 12px;
-        font-size: 14px;
-    }
-    select, input {
-        width: 100%;
-        padding: 10px;
-        margin-top: 6px;
-        border-radius: 8px;
-        border: none;
-        outline: none;
-        font-size: 14px;
-    }
-    button {
-        width: 100%;
-        margin-top: 16px;
-        padding: 12px;
-        border-radius: 8px;
-        border: none;
-        font-size: 15px;
-        cursor: pointer;
-        font-weight: bold;
-    }
-    .primary {
-        background: #00d2ff;
-        color: #000;
-    }
-    .success {
-        background: #00ff95;
-        color: #000;
-    }
-    .result {
-        margin-top: 18px;
-        background: rgba(0,0,0,0.25);
-        padding: 12px;
-        border-radius: 8px;
-        word-break: break-all;
-        font-size: 13px;
-    }
-    a {
-        color: #00ffea;
-        text-decoration: none;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOFA 语法生成器</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent-hover: #7dd3fc;
+            --success: #34d399;
+            --success-hover: #6ee7b7;
+            --danger: #f87171;
+            --dropdown-bg: #1e293b;
+            --input-bg: #0f172a;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --radius: 12px;
+            --tab-active-bg: #1e293b;
+            --tab-inactive-bg: #0f172a;
+            --purple: #a78bfa;
+            --orange: #fb923c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 20% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(52, 211, 153, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(56, 189, 248, 0.04) 0%, transparent 50%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 740px;
+        }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .header .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .header .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #38bdf8, #a78bfa);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #38bdf8, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 0;
+            background: var(--input-bg);
+            border-radius: var(--radius) var(--radius) 0 0;
+            padding: 6px 6px 0 6px;
+            border: 1px solid var(--border);
+            border-bottom: none;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: transparent;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.25s ease;
+            position: relative;
+            letter-spacing: 0.3px;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .tab.active {
+            color: var(--text);
+            background: var(--card-bg);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 2px;
+            border-radius: 2px;
+        }
+
+        .tab.hotel.active::after {
+            background: var(--accent);
+        }
+        .tab.multicast.active::after {
+            background: var(--orange);
+        }
+
+        .tab-icon {
+            display: inline-block;
+            margin-right: 6px;
+            font-size: 16px;
+        }
+
+        /* 卡片 */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            padding: 28px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        /* 语法预览区 */
+        .syntax-preview {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .syntax-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            border-radius: 4px 0 0 4px;
+        }
+
+        .syntax-preview.hotel::before {
+            background: linear-gradient(180deg, #38bdf8, #818cf8);
+        }
+        .syntax-preview.multicast::before {
+            background: linear-gradient(180deg, #fb923c, #f87171);
+        }
+
+        .syntax-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .syntax-content {
+            font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+            font-size: 16px;
+            color: var(--accent);
+            word-break: break-all;
+            line-height: 1.7;
+            padding-left: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .syntax-content.multicast {
+            color: var(--orange);
+        }
+
+        .syntax-content .highlight {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .syntax-content.multicast .highlight {
+            color: #fbbf24;
+        }
+
+        .syntax-content .highlight-org {
+            color: #c084fc;
+            font-weight: 600;
+        }
+
+        /* 表单组 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* 自定义下拉 */
+        .custom-select-wrapper {
+            position: relative;
+        }
+
+        .custom-select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            padding: 14px 44px 14px 16px;
+            font-size: 15px;
+            font-family: inherit;
+            background: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            outline: none;
+        }
+
+        .custom-select:hover {
+            border-color: #64748b;
+        }
+
+        .custom-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+
+        .custom-select option {
+            background: var(--dropdown-bg);
+            color: var(--text);
+            padding: 10px;
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--text-secondary);
+            font-size: 18px;
+            transition: transform 0.25s ease;
+        }
+
+        .custom-select-wrapper:focus-within .select-arrow {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        /* 按钮区 */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 14px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.08));
+            pointer-events: none;
+        }
+
+        .btn-copy {
+            background: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-copy:hover {
+            border-color: var(--success);
+            color: var(--success);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(52, 211, 153, 0.2);
+        }
+
+        .btn-copy:active {
+            transform: translateY(0);
+        }
+
+        .btn-copy-full {
+            background: linear-gradient(135deg, #38bdf8, #2dd4bf);
+            color: #0f172a;
+            border: none;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-copy-full:hover {
+            border-color: transparent;
+            color: #0f172a;
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .btn-copy-full.copied {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .btn-copy.copied {
+            border-color: var(--success);
+            color: var(--success);
+            background: rgba(52, 211, 153, 0.08);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120px);
+            background: #1e293b;
+            color: var(--success);
+            border: 1px solid var(--success);
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast .toast-icon {
+            font-size: 18px;
+        }
+
+        /* 底部信息 */
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .footer .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin: 0 4px;
+            animation: pulse 2s infinite;
+        }
+
+        .dot.blue {
+            background: var(--accent);
+        }
+        .dot.green {
+            background: var(--success);
+        }
+        .dot.orange {
+            background: var(--orange);
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.4;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.4);
+            }
+        }
+
+        /* 隐藏/显示面板 */
+        .panel {
+            display: none;
+        }
+        .panel.active {
+            display: block;
+        }
+
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .card {
+                padding: 20px;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .syntax-content {
+                font-size: 14px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .tab {
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div class="card">
-<h2>🛰️ FOFA 语法生成器</h2>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">F</div>
+                <h1>FOFA 语法生成器</h1>
+            </div>
+            <p class="subtitle">IPTV 直播源搜索工具集</p>
+        </div>
 
-<label>省份</label>
-<select id="province">
-    <option value="Sichuan">四川</option>
-    <option value="Guangdong">广东</option>
-    <option value="Zhejiang">浙江</option>
-    <option value="Jiangsu">江苏</option>
-    <option value="Beijing">北京</option>
-    <option value="Shanghai">上海</option>
-    <option value="Shandong">山东</option>
-    <option value="Henan">河南</option>
-    <option value="Shaanxi">陕西</option>
-</select>
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab hotel active" data-tab="hotel">
+                <span class="tab-icon">📺</span>酒店搜索语法生成器
+            </button>
+            <button class="tab multicast" data-tab="multicast">
+                <span class="tab-icon">📡</span>组播语法生成器
+            </button>
+        </div>
 
-<label>运营商</label>
-<select id="isp">
-    <option value="Chinanet">电信 Chinanet</option>
-    <option value="CUCC">联通 CUCC</option>
-    <option value="CMCC">移动 CMCC</option>
-</select>
+        <!-- 卡片 -->
+        <div class="card">
+            <!-- ========== 酒店搜索面板 ========== -->
+            <div class="panel active" id="panel-hotel">
+                <div class="syntax-preview hotel">
+                    <div class="syntax-label">📋 当前语法</div>
+                    <div class="syntax-content" id="syntaxHotel">
+                        body="/iptv/live/zh_cn.js" &amp;&amp; region="<span class="highlight">Shaanxi</span>"
+                    </div>
+                </div>
 
-<label>搜索类型</label>
-<select id="type">
-    <option value='udpxy'>udpxy 组播代理</option>
-    <option value='port="4020"'>组播端口 4020</option>
-    <option value='port="8000"'>IPTV 常见端口</option>
-    <option value=''>全部资产</option>
-</select>
+                <div class="form-group">
+                    <label>📍 选择省份</label>
+                    <div class="custom-select-wrapper">
+                        <select class="custom-select" id="provinceHotel">
+                            <option value="Anhui">安徽 | Anhui</option>
+                            <option value="Beijing">北京 | Beijing</option>
+                            <option value="Chongqing">重庆 | Chongqing</option>
+                            <option value="Fujian">福建 | Fujian</option>
+                            <option value="Gansu">甘肃 | Gansu</option>
+                            <option value="Guangdong">广东 | Guangdong</option>
+                            <option value="Guangxi">广西 | Guangxi</option>
+                            <option value="Guizhou">贵州 | Guizhou</option>
+                            <option value="Hainan">海南 | Hainan</option>
+                            <option value="Hebei">河北 | Hebei</option>
+                            <option value="Heilongjiang">黑龙江 | Heilongjiang</option>
+                            <option value="Henan">河南 | Henan</option>
+                            <option value="Hubei">湖北 | Hubei</option>
+                            <option value="Hunan">湖南 | Hunan</option>
+                            <option value="Inner Mongolia">内蒙古 | Inner Mongolia</option>
+                            <option value="Jiangsu">江苏 | Jiangsu</option>
+                            <option value="Jiangxi">江西 | Jiangxi</option>
+                            <option value="Jilin">吉林 | Jilin</option>
+                            <option value="Liaoning">辽宁 | Liaoning</option>
+                            <option value="Ningxia">宁夏 | Ningxia</option>
+                            <option value="Qinghai">青海 | Qinghai</option>
+                            <option value="Shaanxi" selected>陕西 | Shaanxi</option>
+                            <option value="Shandong">山东 | Shandong</option>
+                            <option value="Shanghai">上海 | Shanghai</option>
+                            <option value="Shanxi">山西 | Shanxi</option>
+                            <option value="Sichuan">四川 | Sichuan</option>
+                            <option value="Tianjin">天津 | Tianjin</option>
+                            <option value="Tibet">西藏 | Tibet</option>
+                            <option value="Xinjiang">新疆 | Xinjiang</option>
+                            <option value="Yunnan">云南 | Yunnan</option>
+                            <option value="Zhejiang">浙江 | Zhejiang</option>
+                        </select>
+                        <span class="select-arrow">▼</span>
+                    </div>
+                </div>
 
-<button class="primary" onclick="gen()">生成 FOFA 语法</button>
+                <div class="btn-group">
+                    <button class="btn btn-copy btn-copy-full" id="btnCopyHotel">
+                        📋 复制语法
+                    </button>
+                </div>
+            </div>
 
-<div class="result" id="output"></div>
+            <!-- ========== 组播搜索面板 ========== -->
+            <div class="panel" id="panel-multicast">
+                <div class="syntax-preview multicast">
+                    <div class="syntax-label">📋 当前语法</div>
+                    <div class="syntax-content multicast" id="syntaxMulticast">
+                        "udpxy" &amp;&amp; region="<span class="highlight">Guangdong</span>" &amp;&amp; org="<span class="highlight-org">Chinanet</span>"
+                    </div>
+                </div>
 
-<button class="success" onclick="copy()">复制语法</button>
-<button onclick="openFofa()">前往 FOFA 搜索</button>
-</div>
+                <div class="form-group">
+                    <label>📍 选择省份</label>
+                    <div class="custom-select-wrapper">
+                        <select class="custom-select" id="provinceMulticast">
+                            <option value="Anhui">安徽 | Anhui</option>
+                            <option value="Beijing">北京 | Beijing</option>
+                            <option value="Chongqing">重庆 | Chongqing</option>
+                            <option value="Fujian">福建 | Fujian</option>
+                            <option value="Gansu">甘肃 | Gansu</option>
+                            <option value="Guangdong" selected>广东 | Guangdong</option>
+                            <option value="Guangxi">广西 | Guangxi</option>
+                            <option value="Guizhou">贵州 | Guizhou</option>
+                            <option value="Hainan">海南 | Hainan</option>
+                            <option value="Hebei">河北 | Hebei</option>
+                            <option value="Heilongjiang">黑龙江 | Heilongjiang</option>
+                            <option value="Henan">河南 | Henan</option>
+                            <option value="Hubei">湖北 | Hubei</option>
+                            <option value="Hunan">湖南 | Hunan</option>
+                            <option value="Inner Mongolia">内蒙古 | Inner Mongolia</option>
+                            <option value="Jiangsu">江苏 | Jiangsu</option>
+                            <option value="Jiangxi">江西 | Jiangxi</option>
+                            <option value="Jilin">吉林 | Jilin</option>
+                            <option value="Liaoning">辽宁 | Liaoning</option>
+                            <option value="Ningxia">宁夏 | Ningxia</option>
+                            <option value="Qinghai">青海 | Qinghai</option>
+                            <option value="Shaanxi">陕西 | Shaanxi</option>
+                            <option value="Shandong">山东 | Shandong</option>
+                            <option value="Shanghai">上海 | Shanghai</option>
+                            <option value="Shanxi">山西 | Shanxi</option>
+                            <option value="Sichuan">四川 | Sichuan</option>
+                            <option value="Tianjin">天津 | Tianjin</option>
+                            <option value="Tibet">西藏 | Tibet</option>
+                            <option value="Xinjiang">新疆 | Xinjiang</option>
+                            <option value="Yunnan">云南 | Yunnan</option>
+                            <option value="Zhejiang">浙江 | Zhejiang</option>
+                        </select>
+                        <span class="select-arrow">▼</span>
+                    </div>
+                </div>
 
-<script>
-function gen() {
-    const p = document.getElementById("province").value;
-    const isp = document.getElementById("isp").value;
-    const t = document.getElementById("type").value;
+                <div class="form-group">
+                    <label>📶 选择运营商</label>
+                    <div class="custom-select-wrapper">
+                        <select class="custom-select" id="ispSelect">
+                            <option value="Chinanet" selected>中国电信 | Chinanet</option>
+                            <option value="China Unicom">中国联通 | China Unicom</option>
+                            <option value="China Mobile">中国移动 | China Mobile</option>
+                        </select>
+                        <span class="select-arrow">▼</span>
+                    </div>
+                </div>
 
-    let q = "";
-    if (t) q += `"${t}" && `;
-    q += `region="${p}" && org="${isp}"`;
+                <div class="btn-group">
+                    <button class="btn btn-copy btn-copy-full" id="btnCopyMulticast">
+                        📋 复制语法
+                    </button>
+                </div>
+            </div>
+        </div>
 
-    document.getElementById("output").innerHTML =
-        `<b>FOFA 语法：</b><br>${q}`;
-}
+        <!-- 底部 -->
+        <div class="footer">
+            <span class="dot blue"></span> 选择条件自动生成 FOFA 搜索语法 <span class="dot green"></span>
+        </div>
+    </div>
 
-function copy() {
-    const txt = document.getElementById("output").innerText.replace("FOFA 语法：", "").trim();
-    navigator.clipboard.writeText(txt);
-    alert("已复制到剪贴板 ✅");
-}
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <span class="toast-icon">✅</span>
+        <span id="toastMsg">已复制到剪贴板</span>
+    </div>
 
-function openFofa() {
-    const txt = document.getElementById("output").innerText.replace("FOFA 语法：", "").trim();
-    window.open("https://fofa.info/result?qbase64=" + btoa(txt));
-}
-</script>
+    <script>
+        // ==================== 全局 ====================
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        let toastTimer = null;
+        let currentTab = 'hotel';
+
+        function showToast(msg) {
+            if (toastTimer) clearTimeout(toastTimer);
+            toastMsg.textContent = msg;
+            toast.classList.add('show');
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2200);
+        }
+
+        async function copyToClipboard(text, btnEl) {
+            try {
+                await navigator.clipboard.writeText(text);
+                btnEl.classList.add('copied');
+                setTimeout(() => btnEl.classList.remove('copied'), 2000);
+                showToast('✅  已复制到剪贴板');
+            } catch (err) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    btnEl.classList.add('copied');
+                    setTimeout(() => btnEl.classList.remove('copied'), 2000);
+                    showToast('✅  已复制到剪贴板');
+                } catch (e) {
+                    showToast('❌  复制失败，请手动复制');
+                }
+                document.body.removeChild(textarea);
+            }
+        }
+
+        function btnFeedback(btn) {
+            btn.style.transform = 'scale(0.96)';
+            setTimeout(() => { btn.style.transform = ''; }, 150);
+        }
+
+        // ==================== 酒店搜索 ====================
+        const provinceHotel = document.getElementById('provinceHotel');
+        const syntaxHotel = document.getElementById('syntaxHotel');
+        const btnCopyHotel = document.getElementById('btnCopyHotel');
+
+        let hotelSyntax = '';
+
+        function generateHotelSyntax() {
+            const region = provinceHotel.value;
+            hotelSyntax = `body="/iptv/live/zh_cn.js" && region="${region}"`;
+            syntaxHotel.innerHTML = hotelSyntax.replace(
+                `region="${region}"`,
+                `region="<span class="highlight">${region}</span>"`
+            );
+            btnCopyHotel.classList.remove('copied');
+        }
+
+        provinceHotel.addEventListener('change', generateHotelSyntax);
+        btnCopyHotel.addEventListener('click', () => {
+            if (!hotelSyntax) generateHotelSyntax();
+            copyToClipboard(hotelSyntax, btnCopyHotel);
+        });
+
+        // ==================== 组播搜索 ====================
+        const provinceMulticast = document.getElementById('provinceMulticast');
+        const ispSelect = document.getElementById('ispSelect');
+        const syntaxMulticast = document.getElementById('syntaxMulticast');
+        const btnCopyMulticast = document.getElementById('btnCopyMulticast');
+
+        let multicastSyntax = '';
+
+        function generateMulticastSyntax() {
+            const region = provinceMulticast.value;
+            const org = ispSelect.value;
+            multicastSyntax = `"udpxy" && region="${region}" && org="${org}"`;
+            syntaxMulticast.innerHTML = multicastSyntax
+                .replace(
+                    `region="${region}"`,
+                    `region="<span class="highlight">${region}</span>"`
+                )
+                .replace(
+                    `org="${org}"`,
+                    `org="<span class="highlight-org">${org}</span>"`
+                );
+            btnCopyMulticast.classList.remove('copied');
+        }
+
+        provinceMulticast.addEventListener('change', generateMulticastSyntax);
+        ispSelect.addEventListener('change', generateMulticastSyntax);
+        btnCopyMulticast.addEventListener('click', () => {
+            if (!multicastSyntax) generateMulticastSyntax();
+            copyToClipboard(multicastSyntax, btnCopyMulticast);
+        });
+
+        // ==================== 标签页切换 ====================
+        const tabs = document.querySelectorAll('.tab');
+        const panels = document.querySelectorAll('.panel');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.tab;
+                currentTab = target;
+
+                // 更新标签
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // 更新面板
+                panels.forEach(p => p.classList.remove('active'));
+                document.getElementById('panel-' + target).classList.add('active');
+            });
+        });
+
+        // ==================== 键盘快捷键 ====================
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                const activeEl = document.activeElement;
+                if (!activeEl || activeEl.tagName === 'BODY') {
+                    e.preventDefault();
+                    if (currentTab === 'hotel') {
+                        if (!hotelSyntax) generateHotelSyntax();
+                        copyToClipboard(hotelSyntax, btnCopyHotel);
+                    } else {
+                        if (!multicastSyntax) generateMulticastSyntax();
+                        copyToClipboard(multicastSyntax, btnCopyMulticast);
+                    }
+                }
+            }
+        });
+
+        // ==================== 初始化 ====================
+        generateHotelSyntax();
+        generateMulticastSyntax();
+
+        console.log('🚀 FOFA 语法生成器已就绪');
+        console.log('📺 酒店搜索:', hotelSyntax);
+        console.log('📡 组播搜索:', multicastSyntax);
+    </script>
 
 </body>
 </html>
