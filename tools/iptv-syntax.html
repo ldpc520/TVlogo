@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>IPTV 工具箱 · 语法生成器</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root {
+    --bg: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    --card: rgba(255,255,255,.08);
+    --border: rgba(255,255,255,.15);
+    --text: #e5e7eb;
+    --accent: #22d3ee;
+}
+body {
+    font-family: "Segoe UI","Microsoft YaHei",sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 920px;
+    margin: auto;
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+}
+h1 {
+    text-align: center;
+    margin-top: 0;
+    color: #fff;
+}
+label {
+    margin-top: 16px;
+    display: block;
+    font-weight: 600;
+}
+select {
+    width: 100%;
+    margin-top: 6px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,.35);
+    color: #fff;
+}
+.output {
+    background: rgba(0,0,0,.45);
+    padding: 14px;
+    margin-top: 14px;
+    border-radius: 8px;
+    word-break: break-all;
+    font-size: 14px;
+}
+.buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+}
+button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    background: var(--accent);
+    color: #000;
+}
+button:hover {
+    opacity: .85;
+}
+.note {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 16px;
+}
+footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 12px;
+    color: #6b7280;
+}
+.disabled {
+    opacity: .45;
+    pointer-events: none;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h1>📡 IPTV 工具箱 · 语法生成器</h1>
+
+<label>平台</label>
+<select id="platform">
+    <option value="fofa">FOFA</option>
+    <option value="quake">360 Quake</option>
+</select>
+
+<label>目标类型</label>
+<select id="target">
+    <option value="udpxy">udpxy 组播</option>
+    <option value="smart">智能桌面 / 酒店 IPTV</option>
+    <option value="zhgx">智慧光迅 / 酒店 IPTV</option>
+    <option value="huashi">华视美达 / 酒店 IPTV</option>
+    <option value="tvh">Tvheadend</option>
+    <option value="socks5">Socks5 代理</option>
+</select>
+
+<label>省份</label>
+<select id="province">
+    <option value="">不限</option>
+    <option>北京</option><option>天津</option><option>河北</option>
+    <option>山西</option><option>内蒙古</option><option>辽宁</option>
+    <option>吉林</option><option>黑龙江</option><option>上海</option>
+    <option>江苏</option><option>浙江</option><option>安徽</option>
+    <option>福建</option><option>江西</option><option>山东</option>
+    <option>河南</option><option>湖北</option><option>湖南</option>
+    <option>广东</option><option>广西</option><option>海南</option>
+    <option>重庆</option><option>四川</option><option>贵州</option>
+    <option>云南</option><option>西藏</option><option>陕西</option>
+    <option>甘肃</option><option>青海</option><option>宁夏</option>
+    <option>新疆</option><option>台湾</option><option>香港</option><option>澳门</option>
+</select>
+
+<label>城市</label>
+<select id="city">
+    <option value="">不限</option>
+    <option>北京</option><option>上海</option><option>广州</option>
+    <option>深圳</option><option>杭州</option><option>成都</option>
+    <option>武汉</option><option>西安</option><option>南京</option>
+    <option>长沙</option><option>郑州</option><option>济南</option>
+    <option>合肥</option><option>福州</option><option>南昌</option>
+    <option>石家庄</option><option>沈阳</option><option>长春</option>
+    <option>哈尔滨</option><option>重庆</option><option>昆明</option>
+    <option>贵阳</option><option>南宁</option><option>太原</option>
+    <option>兰州</option><option>银川</option><option>西宁</option>
+    <option>海口</option>
+</select>
+
+<div class="output" id="syntax">生成的语法将显示在这里</div>
+
+<div class="buttons">
+    <button onclick="copySyntax()">📋 复制语法</button>
+    <button onclick="openSearch()">🔍 前往搜索</button>
+</div>
+
+<div class="note">
+⚠️ Socks5 使用国家维度（CN / China），不受省份影响<br>
+⚠️ 使用前请完成 FOFA / Quake 实名认证<br>
+⚠️ 仅限合法合规使用
+</div>
+</div>
+
+<footer>整理：睡眼迷离的猫 · 纯前端版 · 2026-05-18</footer>
+
+<script>
+const config = {
+fofa: {
+    udpxy: 'server="udpxy" && region="{province}"',
+    smart: '"iptv/live/zh_cn.js" && region="{province}"',
+    zhgx: '"ZHGXTV" && region="{province}"',
+    huashi: '"华视美达" && region="{province}"',
+    tvh: 'server="HTS/tvheadend"',
+    socks5: 'protocol="socks5" && country="CN"'
+},
+quake: {
+    udpxy: 'response:"udpxy" AND province:"{province}"',
+    smart: 'response:"iptv/live/zh_cn.js" AND province:"{province}"',
+    zhgx: 'response:"ZHGXTV" AND province:"{province}"',
+    huashi: 'response:"华视美达" AND province:"{province}"',
+    tvh: 'title:"Tvheadend"',
+    socks5: 'service:"socks5" AND country:"China"'
+}
+};
+
+const urls = {
+fofa: 'https://fofa.info/result?qbase64=',
+quake: 'https://quake.360.net/quake/search?query='
+};
+
+function utf8B64(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+}
+
+function toggleAreaDisable() {
+    const isSocks = document.getElementById("target").value === "socks5";
+    document.getElementById("province").classList.toggle("disabled", isSocks);
+    document.getElementById("city").classList.toggle("disabled", isSocks);
+}
+
+function buildSyntax() {
+    const p = document.getElementById("platform").value;
+    const t = document.getElementById("target").value;
+    let province = document.getElementById("province").value;
+    const city = document.getElementById("city").value;
+
+    let syntax = config[p][t];
+
+    if (t !== "socks5") {
+        if (!province) {
+            document.getElementById("syntax").innerText = "请选择省份";
+            return;
+        }
+        syntax = syntax.replace("{province}", province);
+        if (city) {
+            syntax += p === "fofa"
+                ? ` && city="${city}"`
+                : ` AND city:"${city}"`;
+        }
+    }
+
+    document.getElementById("syntax").innerText = syntax;
+}
+
+document.getElementById("platform").addEventListener("change", buildSyntax);
+document.getElementById("target").addEventListener("change", () => {
+    toggleAreaDisable();
+    buildSyntax();
+});
+document.getElementById("province").addEventListener("change", buildSyntax);
+document.getElementById("city").addEventListener("change", buildSyntax);
+
+toggleAreaDisable();
+buildSyntax();
+
+function copySyntax() {
+    navigator.clipboard.writeText(document.getElementById("syntax").innerText)
+        .then(() => alert("语法已复制"));
+}
+
+function openSearch() {
+    const text = document.getElementById("syntax").innerText;
+    const p = document.getElementById("platform").value;
+    if (text.includes("请选择")) return;
+    const url = urls[p] + (p === "fofa" ? utf8B64(text) : encodeURIComponent(text));
+    window.open(url);
+}
+</script>
+</body>
+</html>
