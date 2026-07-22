@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎲 3D 摇骰子</title>
+<style>
+  :root{
+    --bg1:#7b5cff; --bg2:#19c2ff; --bg3:#ff6ec7;
+    --glass: rgba(255,255,255,.16);
+    --glass-strong: rgba(255,255,255,.28);
+    --text:#fff; --muted: rgba(255,255,255,.78);
+    --accent:#ffd34e; --accent-deep:#ff9f1c;
+    --die-face:#fbfbff; --pip:#2a2a35;
+    --shadow: rgba(20,10,60,.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);
+    min-height:100%;
+    display:flex;flex-direction:column;align-items:center;
+    padding:28px 16px 48px;
+    background:linear-gradient(125deg,var(--bg1),var(--bg2) 45%,var(--bg3));
+    background-size:220% 220%;
+    animation:bgshift 18s ease infinite;
+    overflow-x:hidden;
+  }
+  @keyframes bgshift{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+  }
+  /* 漂浮光斑 */
+  body::before,body::after{
+    content:"";position:fixed;border-radius:50%;filter:blur(60px);opacity:.45;z-index:0;pointer-events:none;
+  }
+  body::before{width:340px;height:340px;background:#fff;top:-90px;left:-90px;animation:float1 14s ease-in-out infinite;}
+  body::after{width:300px;height:300px;background:#ffd34e;bottom:-80px;right:-80px;animation:float2 16s ease-in-out infinite;}
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,30px)}}
+  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,-30px)}}
+
+  .wrap{position:relative;z-index:1;width:100%;max-width:720px;display:flex;flex-direction:column;align-items:center;}
+
+  .header{text-align:center;margin-bottom:18px;}
+  .header h1{font-size:clamp(1.6rem,5vw,2.3rem);letter-spacing:1px;text-shadow:0 3px 12px var(--shadow);}
+  .header p{color:var(--muted);font-size:.92rem;margin-top:6px;}
+
+  .card{
+    width:100%;
+    background:var(--glass);
+    border:1px solid var(--glass-strong);
+    border-radius:22px;
+    padding:22px 20px 26px;
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    box-shadow:0 18px 50px var(--shadow);
+  }
+
+  .control-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+  .control-row .lbl{font-weight:700;font-size:1rem;}
+
+  .stepper{display:flex;align-items:center;gap:10px;}
+  .stepper button{
+    width:42px;height:42px;border:none;border-radius:50%;
+    background:var(--glass-strong);color:#fff;font-size:1.4rem;font-weight:800;cursor:pointer;
+    transition:transform .12s, background .15s;line-height:1;
+    box-shadow:0 4px 14px var(--shadow);
+  }
+  .stepper button:hover{background:rgba(255,255,255,.4);}
+  .stepper button:active{transform:scale(.9);}
+  .stepper input{
+    width:64px;height:42px;text-align:center;border:1px solid var(--glass-strong);
+    border-radius:12px;background:rgba(255,255,255,.18);color:#fff;
+    font-size:1.15rem;font-weight:800;
+    -moz-appearance:textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+  .quick{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0 18px;}
+  .quick button{
+    width:40px;height:40px;border:1px solid var(--glass-strong);background:rgba(255,255,255,.14);color:#fff;
+    border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;transition:all .15s;
+  }
+  .quick button:hover{background:rgba(255,255,255,.3);}
+  .quick button.active{background:var(--accent);color:#3a2a00;border-color:var(--accent);}
+
+  /* ===== 间距调节区 =====
+     想让「摇一摇」按钮及下方内容整体下移、与上方 123456 拉开距离，
+     只需改下面这一行的 margin 第一个值（上间距），例如 28px → 48px 会拉得更开。 */
+  .roll-btn{
+    display:block;width:100%;max-width:340px;margin:40px auto 20px;padding:16px;
+    border:none;border-radius:16px;cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent-deep));
+    color:#3a2a00;font-size:1.15rem;font-weight:900;letter-spacing:3px;
+    box-shadow:0 10px 26px rgba(255,159,28,.45);
+    transition:transform .1s, box-shadow .15s, filter .15s;
+  }
+  .roll-btn:hover{filter:brightness(1.05);}
+  .roll-btn:active{transform:scale(.97);}
+  .roll-btn:disabled{filter:grayscale(.4) brightness(.9);cursor:not-allowed;box-shadow:none;}
+
+  .toolbar{display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+  .chip{
+    display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600;
+    background:rgba(255,255,255,.16);border:1px solid var(--glass-strong);
+    padding:7px 12px;border-radius:999px;cursor:pointer;user-select:none;color:#fff;
+  }
+  .chip.off{opacity:.55;}
+
+  /* 骰子舞台 */
+  .stage{
+    display:flex;flex-wrap:wrap;gap:clamp(14px,4vw,28px);
+    justify-content:center;align-items:center;
+    perspective:1000px;
+    padding:14px 4px 26px;
+    min-height:140px;
+  }
+
+  .die-slot{display:flex;flex-direction:column;align-items:center;gap:10px;}
+  .die{
+    /* ===== 骰子大小调节区 =====
+       想改骰子尺寸，只改下面这一行的 --s（三值分别为：最小 / 随屏幕自适应 / 最大）。
+       当前为原尺寸的 1.5 倍（约增大一半）：原 64/19vw/104 → 现 96/28.5vw/156。
+       想再大就继续乘倍数，例如 2 倍用 128px,38vw,208px；想恢复就改回原值。 */
+    --s:clamp(96px,28.5vw,156px);
+    width:var(--s);height:var(--s);position:relative;
+    transform-style:preserve-3d;
+    transform:rotateX(-22deg) rotateY(22deg);
+    transition:transform 1.4s cubic-bezier(.2,.85,.25,1.05);
+    will-change:transform;
+  }
+  .die.rolling{transition:transform 1.4s cubic-bezier(.25,.8,.3,1);}
+  .face{
+    position:absolute;width:var(--s);height:var(--s);
+    background:linear-gradient(145deg,#ffffff,#e9ecf5);
+    border-radius:18%;
+    border:1px solid rgba(0,0,0,.06);
+    box-shadow:inset 0 4px 10px rgba(255,255,255,.9), inset 0 -6px 12px rgba(40,40,80,.12);
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,1fr);
+    padding:14%;
+    gap:6%;
+  }
+  .pip{
+    width:100%;height:100%;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #5a5a66, var(--pip) 70%);
+    box-shadow:inset 0 -2px 3px rgba(0,0,0,.4), 0 1px 1px rgba(255,255,255,.5);
+    align-self:center;justify-self:center;
+    visibility:hidden;
+  }
+  .pip.on{visibility:visible;}
+
+  /* 立方体六面定位 */
+  .f-front { transform:translateZ(calc(var(--s)/2)); }
+  .f-back  { transform:rotateY(180deg) translateZ(calc(var(--s)/2)); }
+  .f-right { transform:rotateY(90deg)  translateZ(calc(var(--s)/2)); }
+  .f-left  { transform:rotateY(-90deg) translateZ(calc(var(--s)/2)); }
+  .f-top   { transform:rotateX(90deg)  translateZ(calc(var(--s)/2)); }
+  .f-bottom{ transform:rotateX(-90deg) translateZ(calc(var(--s)/2)); }
+
+  /* 落地阴影 */
+  .shadow{
+    width:calc(var(--s)*.78);height:calc(var(--s)*.22);
+    background:radial-gradient(ellipse at center, rgba(20,10,60,.45), transparent 70%);
+    border-radius:50%;
+    filter:blur(2px);
+    transition:transform 1.4s ease;
+  }
+
+  .result{
+    text-align:center;margin-top:6px;min-height:2em;
+  }
+  .result .nums{font-size:1.05rem;font-weight:700;letter-spacing:1px;}
+  .result .sum{
+    display:inline-block;margin-top:8px;padding:6px 16px;border-radius:999px;
+    background:var(--glass-strong);border:1px solid var(--glass-strong);
+    font-weight:800;font-size:1rem;
+  }
+  .result .sum b{color:var(--accent);font-size:1.25rem;}
+
+  .hint{text-align:center;color:var(--muted);font-size:.85rem;margin-top:14px;}
+
+  @media (max-width:430px){
+    body{padding:20px 12px 40px;}
+    .card{padding:18px 14px 22px;border-radius:18px;}
+    .roll-btn{letter-spacing:2px;}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>🎲 3D 摇骰子</h1>
+      <p>真实立体骰子 · 自由设定数量 · 手机电脑自适应</p>
+    </div>
+
+    <div class="card">
+      <div class="control-row">
+        <span class="lbl">骰子数量</span>
+        <div class="stepper">
+          <button id="minus" aria-label="减少">−</button>
+          <input type="number" id="diceCount" value="2" min="1" max="9">
+          <button id="plus" aria-label="增加">+</button>
+        </div>
+      </div>
+
+      <div class="quick" id="quick">
+        <button data-n="1">1</button>
+        <button data-n="2" class="active">2</button>
+        <button data-n="3">3</button>
+        <button data-n="4">4</button>
+        <button data-n="5">5</button>
+        <button data-n="6">6</button>
+      </div>
+
+      <button class="roll-btn" id="rollBtn">摇 一 摇</button>
+
+      <div class="toolbar">
+        <span class="chip" id="soundChip">🔊 音效</span>
+        <span class="chip off" id="autoChip">⚡ 连摇</span>
+      </div>
+
+      <div class="stage" id="stage"></div>
+
+      <div class="result" id="result">
+        <div class="nums" id="nums">准备就绪</div>
+        <div class="sum" id="sum" style="display:none">总点数 <b>–</b></div>
+      </div>
+
+      <div class="hint">提示：按 空格键 也能摇骰子</div>
+    </div>
+  </div>
+
+<script>
+  const PIP = {
+    1:[4],
+    2:[0,8],
+    3:[0,4,8],
+    4:[0,2,6,8],
+    5:[0,2,4,6,8],
+    6:[0,2,3,5,6,8]
+  };
+  // 面 -> 点数（相对面之和为 7）
+  const FACE_NUM = { front:1, back:6, right:3, left:4, top:5, bottom:2 };
+  // 显示某点数时立方体的旋转 [rotateX, rotateY]
+  const ROT = {
+    1:[0,0], 6:[0,180], 3:[0,-90], 4:[0,90], 5:[-90,0], 2:[90,0]
+  };
+  const FACES = ["front","back","right","left","top","bottom"];
+
+  const diceCount = document.getElementById('diceCount');
+  const stage     = document.getElementById('stage');
+  const rollBtn   = document.getElementById('rollBtn');
+  const numsEl    = document.getElementById('nums');
+  const sumEl     = document.getElementById('sum');
+  const quickBtns = document.querySelectorAll('#quick button');
+  const soundChip = document.getElementById('soundChip');
+  const autoChip  = document.getElementById('autoChip');
+
+  let soundOn = true;
+  let autoOn  = false;
+  let rolling = false;
+  let dice = []; // {el, shadow, rx, ry}
+
+  function buildFace(name){
+    const f = document.createElement('div');
+    f.className = 'face f-' + name;
+    const layout = PIP[FACE_NUM[name]];
+    for(let i=0;i<9;i++){
+      const p = document.createElement('div');
+      p.className = 'pip' + (layout.includes(i) ? ' on' : '');
+      f.appendChild(p);
+    }
+    return f;
+  }
+
+  function buildDie(initNum){
+    const slot = document.createElement('div');
+    slot.className = 'die-slot';
+
+    const die = document.createElement('div');
+    die.className = 'die';
+    FACES.forEach(n => die.appendChild(buildFace(n)));
+    const [rx,ry] = ROT[initNum];
+    die.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+
+    const shadow = document.createElement('div');
+    shadow.className = 'shadow';
+
+    slot.appendChild(die);
+    slot.appendChild(shadow);
+    stage.appendChild(slot);
+
+    return { el:die, shadow, rx, ry };
+  }
+
+  function rebuild(){
+    clampCount();
+    stage.innerHTML = '';
+    dice = [];
+    const n = parseInt(diceCount.value,10);
+    for(let i=0;i<n;i++) dice.push(buildDie(Math.floor(Math.random()*6)+1));
+    numsEl.textContent = '准备就绪';
+    sumEl.style.display = 'none';
+  }
+
+  function clampCount(){
+    let n = parseInt(diceCount.value,10);
+    if(isNaN(n)) n = 1;
+    n = Math.max(1, Math.min(9, n));
+    diceCount.value = n;
+    quickBtns.forEach(b => b.classList.toggle('active', parseInt(b.dataset.n,10) === n));
+  }
+
+  // 计算下一圈旋转：保证向前多转若干整圈，且落点恰好显示目标点数
+  function nextRot(cur, targetBase){
+    const spins = 4 + Math.floor(Math.random()*4);
+    const k = Math.ceil((cur + spins*360 - targetBase) / 360);
+    return targetBase + k*360;
+  }
+
+  function playClack(){
+    if(!soundOn) return;
+    try{
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if(!Ctx) return;
+      const ctx = playClack._ctx || (playClack._ctx = new Ctx());
+      if(ctx.state === 'suspended') ctx.resume();
+      const dur = 0.07;
+      const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*dur), ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/d.length, 2);
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const hp = ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=1400;
+      const g = ctx.createGain(); g.gain.value=0.28;
+      src.connect(hp); hp.connect(g); g.connect(ctx.destination);
+      src.start();
+    }catch(e){}
+  }
+
+  function roll(){
+    if(rolling) return;
+    clampCount();
+    const n = parseInt(diceCount.value,10);
+    // 数量变化时重建
+    if(dice.length !== n) rebuild();
+    rolling = true;
+    rollBtn.disabled = true;
+    numsEl.textContent = '投掷中…';
+    sumEl.style.display = 'none';
+
+    const values = [];
+    dice.forEach(d => {
+      const v = Math.floor(Math.random()*6)+1;
+      values.push(v);
+      const [trx,try_] = ROT[v];
+      d.rx = nextRot(d.rx, trx);
+      d.ry = nextRot(d.ry, try_);
+      d.el.classList.add('rolling');
+      d.el.style.transform = `rotateX(${d.rx}deg) rotateY(${d.ry}deg)`;
+      d.shadow.style.transform = 'scale(1.1)';
+    });
+
+    playClack();
+    setTimeout(playClack, 380);
+    setTimeout(playClack, 760);
+
+    setTimeout(() => {
+      dice.forEach(d => { d.el.classList.remove('rolling'); d.shadow.style.transform = 'scale(1)'; });
+      numsEl.textContent = '结果：' + values.join('  ·  ');
+      const total = values.reduce((a,b)=>a+b,0);
+      sumEl.style.display = 'inline-block';
+      sumEl.innerHTML = '总点数 <b>' + total + '</b>';
+      rolling = false;
+      rollBtn.disabled = false;
+      if(autoOn) setTimeout(roll, 700);
+    }, 1450);
+  }
+
+  // 控件事件
+  document.getElementById('minus').addEventListener('click', () => {
+    diceCount.value = Math.max(1,(parseInt(diceCount.value,10)||1)-1); clampCount(); rebuild();
+  });
+  document.getElementById('plus').addEventListener('click', () => {
+    diceCount.value = Math.min(9,(parseInt(diceCount.value,10)||1)+1); clampCount(); rebuild();
+  });
+  diceCount.addEventListener('change', () => { clampCount(); rebuild(); });
+  quickBtns.forEach(b => b.addEventListener('click', () => { diceCount.value = b.dataset.n; clampCount(); rebuild(); }));
+  rollBtn.addEventListener('click', roll);
+
+  soundChip.addEventListener('click', () => {
+    soundOn = !soundOn;
+    soundChip.classList.toggle('off', !soundOn);
+    soundChip.textContent = soundOn ? '🔊 音效' : '🔇 静音';
+  });
+  autoChip.addEventListener('click', () => {
+    autoOn = !autoOn;
+    autoChip.classList.toggle('off', !autoOn);
+    if(autoOn && !rolling) roll();
+  });
+
+  // 空格键摇骰
+  document.addEventListener('keydown', e => {
+    if(e.code === 'Space'){ e.preventDefault(); if(!rolling) roll(); }
+  });
+
+  rebuild();
+</script>
+</body>
+</html>
