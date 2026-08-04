@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M3U/M3U8/TXT多功能转换工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            padding: 25px 30px;
+        }
+
+        .mode-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .mode-card {
+            flex: 1;
+            min-width: 250px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-color: #3498db;
+        }
+
+        .mode-card.selected {
+            background: #e3f2fd;
+            border-color: #3498db;
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+        }
+
+        .mode-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .mode-card p {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            margin: 30px 0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .section-header h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            font-size: 1.4rem;
+        }
+
+        .counter {
+            background: #e9ecef;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #ced4da;
+            border-radius: 10px;
+            resize: vertical;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        #input {
+            background-color: #f8f9fa;
+        }
+
+        #output {
+            background-color: #e9f7fe;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 30px 0;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-convert {
+            background: linear-gradient(to right, #27ae60, #2ecc71);
+        }
+
+        .btn-clear {
+            background: linear-gradient(to right, #7f8c8d, #95a5a6);
+        }
+
+        .btn-copy {
+            background: linear-gradient(to right, #2980b9, #3498db);
+        }
+
+        .btn-export {
+            background: linear-gradient(to right, #c0392b, #e74c3c);
+        }
+
+        .info-panel {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0 15px;
+            border-left: 4px solid #3498db;
+        }
+
+        .info-panel h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .info-panel ul {
+            padding-left: 25px;
+            margin-bottom: 0;
+        }
+
+        .info-panel li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .example {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            font-size: 13px;
+            border: 1px dashed #3498db;
+        }
+
+        .example-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.85);
+            padding: 20px;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: #2ecc71;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.error {
+            background: #e74c3c;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        @media (max-width: 768px) {
+            .mode-card {
+                min-width: 100%;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-exchange-alt"></i> M3U/M3U8/TXT转换工具</h1>
+            <p>支持多种格式互转，批量处理播放列表，一键导出结果</p>
+        </header>
+
+        <div class="main-content">
+            <div class="mode-group">
+                <div class="mode-card selected" data-mode="m3u2txt">
+                    <h3><i class="fas fa-arrow-right"></i> M3U/M3U8 → TXT</h3>
+                    <p>将M3U或M3U8格式转换为"频道名称,URL"的TXT格式</p>
+                </div>
+                <div class="mode-card" data-mode="txt2m3u">
+                    <h3><i class="fas fa-arrow-right"></i> TXT → M3U</h3>
+                    <p>将"名称,URL"格式的TXT转换为标准M3U播放列表</p>
+                </div>
+                <div class="mode-card" data-mode="txt2m3u8">
+                    <h3><i class="fas fa-arrow-right"></i> TXT → M3U8</h3>
+                    <p>将"名称,URL"格式的TXT转换为带扩展信息的M3U8播放列表</p>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="section-header">
+                    <h2><i class="fas fa-pen"></i> 输入内容</h2>
+                    <div class="counter">条目: <span id="inputCounter">0</span></div>
+                </div>
+                <textarea id="input" placeholder="请输入M3U/M3U8或TXT格式的内容..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-convert" id="convertBtn">
+                    <i class="fas fa-sync-alt"></i> 转换
+                </button>
+                <button class="btn btn-clear" id="clearBtn">
+                    <i class="fas fa-broom"></i> 清空
+                </button>
+                <button class="btn btn-copy" id="copyBtn">
+                    <i class="fas fa-copy"></i> 复制
+                </button>
+                <button class="btn btn-export" id="exportBtn">
+                    <i class="fas fa-download"></i> 导出
+                </button>
+            </div>
+
+            <div class="input-group">
+                <div class="section-header">
+                    <h2><i class="fas fa-file-alt"></i> 转换结果</h2>
+                    <div class="counter">条目: <span id="outputCounter">0</span></div>
+                </div>
+                <textarea id="output" placeholder="转换结果将显示在这里..." readonly></textarea>
+            </div>
+
+            <div class="info-panel">
+                <h3><i class="fas fa-info-circle"></i> 使用说明</h3>
+                <ul>
+                    <li><strong>M3U/M3U8 → TXT</strong>：将M3U或M3U8格式转换为"频道名称,URL"的TXT格式</li>
+                    <li><strong>TXT → M3U</strong>：将"名称,URL"格式的TXT转换为标准M3U播放列表</li>
+                    <li><strong>TXT → M3U8</strong>：将"名称,URL"格式的TXT转换为带扩展信息的M3U8播放列表</li>
+                    <li><strong>TXT → M3U8（logo）</strong>：默认按频道名自动生成logo（优先取字母数字部分，如 CCTV-13新闻→CCTV13.png；纯中文名如 民視第一台→民視第一台.png）；也可用"名称,URL,logo文件名"第3列强制指定</li>
+                    <li>支持批量转换，可同时处理多个频道条目</li>
+                    <li>转换完成后可一键复制结果或导出为文件</li>
+                    <li><strong>复制功能修复：</strong> 已解决复制失败问题，支持所有现代浏览器</li>
+                </ul>
+
+                <div class="example">
+                    <span class="example-title">M3U8格式示例：</span>
+                    #EXTINF:-1 tvg-id="民視第一台" tvg-name="民視第一台" tvg-logo="https://example.com/logo.png"
+                    group-title="綜合其他",民視第一台<br>
+                    http://example.com/channel1.m3u8?proxy=true<br><br>
+
+                    <span class="example-title">转换结果：</span>
+                    民視第一台,http://example.com/channel1.m3u8?proxy=true<br><br>
+
+                    <span class="example-title">TXT → M3U8 自定义 logo 示例：</span>
+                    CCTV-13新闻,http://example.com/cctv13.m3u8,CCTV13.png<br>
+                    → tvg-logo="https://github.sdjy.eu.org/https://raw.githubusercontent.com/ldpc520/TVlogo/main/tvlogo/CCTV13.png"
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">操作成功！</span>
+    </div>
+
+    <footer>
+        <p>© 2023 M3U/M3U8/TXT多功能转换工具 | 支持批量处理播放列表 | 复制功能已修复</p>
+    </footer>
+
+    <script>
+        // 获取DOM元素
+        const inputTextarea = document.getElementById('input');
+        const outputTextarea = document.getElementById('output');
+        const inputCounter = document.getElementById('inputCounter');
+        const outputCounter = document.getElementById('outputCounter');
+        const convertBtn = document.getElementById('convertBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const modeCards = document.querySelectorAll('.mode-card');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        
+        // 当前转换模式
+        let currentMode = 'm3u2txt';
+        
+        // 示例内容（页面加载时预填到输入框）
+        const exampleContent =
+`#EXTINF:-1 tvg-id="民視第一台" tvg-name="民視第一台" tvg-logo="https://example.com/logo.png" group-title="綜合其他",民視第一台
+http://example.com/channel1.m3u8?proxy=true
+#EXTINF:-1 tvg-id="测试频道" tvg-name="测试频道" tvg-logo="" group-title="其他",测试频道
+http://example.com/channel2.m3u8`;
+        
+        // 显示通知
+        function showNotification(message, isError = false) {
+            notificationText.textContent = message;
+            
+            if (isError) {
+                notification.classList.add('error');
+            } else {
+                notification.classList.remove('error');
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // 更新计数器（按实际条目数统计，而非行数）
+        function updateCounter(textarea, counterElement) {
+            const content = textarea.value;
+            if (!content.trim()) {
+                counterElement.textContent = '0';
+                return;
+            }
+            let count;
+            if (content.includes('#EXTINF')) {
+                // M3U/M3U8 格式：统计 #EXTINF 行数
+                count = content.split('\n').filter(l => l.trim().startsWith('#EXTINF')).length;
+            } else {
+                // TXT 格式：统计含逗号的“名称,URL”行数
+                count = content.split('\n').filter(l => {
+                    const t = l.trim();
+                    return t && t.includes(',');
+                }).length;
+            }
+            counterElement.textContent = count;
+        }
+        
+        // 设置转换模式
+        function setConversionMode(mode) {
+            currentMode = mode;
+            
+            // 更新UI
+            modeCards.forEach(card => {
+                if (card.dataset.mode === mode) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+            
+            // 如果输入框有内容，自动转换
+            if (inputTextarea.value.trim()) {
+                convertFormat();
+            }
+        }
+        
+        // 转换格式主函数
+        function convertFormat() {
+            const input = inputTextarea.value;
+            let output = '';
+            
+            if (!input.trim()) {
+                showNotification('请输入要转换的内容！');
+                return;
+            }
+            
+            try {
+                if (currentMode === 'm3u2txt') {
+                    output = m3uToTxt(input);
+                } else if (currentMode === 'txt2m3u') {
+                    output = txtToM3u(input);
+                } else if (currentMode === 'txt2m3u8') {
+                    output = txtToM3u8(input);
+                }
+                
+                outputTextarea.value = output;
+                updateCounter(outputTextarea, outputCounter);
+                showNotification('转换成功！');
+            } catch (error) {
+                showNotification('转换出错: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        // M3U/M3U8 转 TXT
+        function m3uToTxt(input) {
+            const lines = input.split('\n');
+            const result = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                if (line.startsWith('#EXTINF')) {
+                    // 提取频道名称（最后一个逗号之后的内容）
+                    const lastCommaIndex = line.lastIndexOf(',');
+                    const name = lastCommaIndex !== -1 ? line.slice(lastCommaIndex + 1).trim() : '未命名频道';
+                    
+                    // 向后查找真正的 URL 行，跳过空行与 #EXTGRP 等属性行
+                    let j = i + 1;
+                    while (j < lines.length) {
+                        const candidate = lines[j].trim();
+                        if (!candidate || candidate.startsWith('#')) {
+                            j++;
+                            continue;
+                        }
+                        result.push(`${name},${candidate}`);
+                        i = j; // 跳过已处理的 URL 行
+                        break;
+                    }
+                }
+            }
+            
+            return result.join('\n');
+        }
+        
+        // TXT 转 M3U
+        function txtToM3u(input) {
+            const lines = input.split('\n');
+            const result = ['#EXTM3U'];
+            
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                
+                const lastComma = trimmed.lastIndexOf(',');
+                if (lastComma === -1) continue;
+                
+                const name = trimmed.slice(0, lastComma).trim();
+                const url = trimmed.slice(lastComma + 1).trim();
+                
+                if (name && url) {
+                    result.push(`#EXTINF:-1,${name}`);
+                    result.push(url);
+                }
+            }
+            
+            return result.join('\n');
+        }
+        
+        // TXT 转 M3U8（带扩展信息，支持可选 logo 列）
+        function txtToM3u8(input) {
+            const lines = input.split('\n');
+            const result = ['#EXTM3U'];
+            // 频道 logo 基础地址
+            const logoBase = 'https://github.sdjy.eu.org/https://raw.githubusercontent.com/ldpc520/TVlogo/main/tvlogo';
+            
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                
+                // 支持两种格式：
+                //   名称,URL
+                //   名称,URL,logo文件名（可覆盖自动生成的 logo 名，例如频道名是 CCTV-13新闻 但 logo 是 CCTV13.png）
+                const parts = trimmed.split(',');
+                if (parts.length < 2) continue;
+                
+                const name = parts[0].trim();
+                const url = parts[1].trim();
+                const logoField = parts.length >= 3 ? parts.slice(2).join(',').trim() : '';
+                
+                if (!name || !url) continue;
+                
+                // 计算 logo 地址
+                let logoUrl;
+                if (logoField) {
+                    // 若已是完整 URL 则直接使用；否则拼到基础地址后（自动补 .png 扩展名）
+                    if (/^https?:\/\//i.test(logoField)) {
+                        logoUrl = logoField;
+                    } else {
+                        const file = /\.(png|jpe?g|gif|webp|svg)$/i.test(logoField)
+                            ? logoField
+                            : logoField + '.png';
+                        logoUrl = `${logoBase}/${file}`;
+                    }
+                } else {
+                    // 未指定时自动生成 logo 名：
+                    // 优先取频道名中的字母数字部分（如 CCTV-13新闻 → CCTV13），
+                    // 若频道名纯中文则回退到原频道名（如 民視第一台 → 民視第一台.png）
+                    const ascii = name.replace(/[^A-Za-z0-9]/g, '');
+                    const base = ascii || name.replace(/\s+/g, '');
+                    logoUrl = `${logoBase}/${base}.png`;
+                }
+                
+                const logoId = name.replace(/\s+/g, '');
+                result.push(`#EXTINF:-1 tvg-id="${logoId}" tvg-name="${name}" tvg-logo="${logoUrl}" group-title="",${name}`);
+                result.push(url);
+            }
+            
+            return result.join('\n');
+        }
+        
+        // 清空输入输出
+        function clearAll() {
+            inputTextarea.value = '';
+            outputTextarea.value = '';
+            updateCounter(inputTextarea, inputCounter);
+            updateCounter(outputTextarea, outputCounter);
+            showNotification('已清空所有内容');
+        }
+        
+        // 复制输出内容 - 主用现代 Clipboard API，execCommand 作兜底
+        function copyOutput() {
+            const text = outputTextarea.value;
+            if (!text.trim()) {
+                showNotification('输出内容为空，无法复制！', true);
+                return;
+            }
+
+            // 兜底方案：在无法使用 Clipboard API 时使用
+            const fallbackCopy = () => {
+                const tempTextarea = document.createElement('textarea');
+                tempTextarea.value = text;
+                tempTextarea.setAttribute('readonly', '');
+                tempTextarea.style.position = 'absolute';
+                tempTextarea.style.left = '-9999px';
+                document.body.appendChild(tempTextarea);
+
+                tempTextarea.select();
+                try {
+                    const success = document.execCommand('copy');
+                    if (success) {
+                        showNotification('已成功复制到剪贴板！');
+                    } else {
+                        showNotification('浏览器不支持直接复制，请手动选择并复制', true);
+                    }
+                } catch (err) {
+                    showNotification('复制失败: 请手动选择并复制', true);
+                } finally {
+                    document.body.removeChild(tempTextarea);
+                }
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => showNotification('已复制到剪贴板！'))
+                    .catch(() => fallbackCopy());
+            } else {
+                fallbackCopy();
+            }
+        }
+        
+        // 导出文件
+        function exportFile() {
+            const text = outputTextarea.value;
+            if (!text.trim()) {
+                showNotification('输出内容为空，无法导出！', true);
+                return;
+            }
+            
+            let ext = 'txt';
+            let type = 'text/plain';
+            
+            if (currentMode === 'txt2m3u') {
+                ext = 'm3u';
+                type = 'application/mpegurl';
+            } else if (currentMode === 'txt2m3u8') {
+                ext = 'm3u8';
+                type = 'application/vnd.apple.mpegurl';
+            }
+            
+            const blob = new Blob([text], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `playlist.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showNotification(`文件已导出为 playlist.${ext}`);
+        }
+        
+        // 初始化
+        function init() {
+            // 设置模式卡片点击事件
+            modeCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    setConversionMode(card.dataset.mode);
+                });
+            });
+            
+            // 设置按钮事件
+            convertBtn.addEventListener('click', convertFormat);
+            clearBtn.addEventListener('click', clearAll);
+            copyBtn.addEventListener('click', copyOutput);
+            exportBtn.addEventListener('click', exportFile);
+            
+            // 输入框事件
+            inputTextarea.addEventListener('input', () => {
+                updateCounter(inputTextarea, inputCounter);
+            });
+            
+            // 初始计数
+            updateCounter(inputTextarea, inputCounter);
+            updateCounter(outputTextarea, outputCounter);
+            
+            inputTextarea.value = exampleContent;
+            updateCounter(inputTextarea, inputCounter);
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>
