@@ -221,15 +221,7 @@
             }
 
             .site-icon.iconify-icon {
-                width: 40px !important;
-                height: 40px !important;
-                min-width: 40px;
-                font-size: 24px;
-            }
-
-            .site-icon.iconify-icon svg {
-                width: 24px;
-                height: 24px;
+                padding: 8px !important;
             }
         }
 
@@ -270,22 +262,12 @@
         }
 
         .site-icon.iconify-icon {
-            width: 48px !important;
-            height: 48px !important;
-            min-width: 48px;
-            font-size: 28px;
             background: rgba(255, 255, 255, 0.08);
             border-radius: 12px;
-            padding: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* iconify-icon 内部 SVG 继承尺寸 */
-        .site-icon.iconify-icon svg {
-            width: 28px;
-            height: 28px;
+            padding: 10px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
 
         .site-card:hover .site-icon {
@@ -578,7 +560,7 @@
             },
 			{
                 name: "IP面板",
-                url: "https://panel.527200.xyz",
+                url: "https://panel.527200.xyz/",
                 icon: "eos-icons:ip-outlined",
                 category: "IPTV",
                 description: "IP节点选择"
@@ -649,7 +631,7 @@
         // 生成图标 HTML
         function renderIcon(icon) {
             if (isIconifyIcon(icon)) {
-                return `<iconify-icon class="site-icon" icon="${icon}"></iconify-icon>`;
+                return `<iconify-icon class="site-icon iconify-icon" icon="${icon}" width="28" height="28"></iconify-icon>`;
             }
             // 图片图标 + 加载失败兜底
             return `<img class="site-icon" src="${icon}" alt="icon"
