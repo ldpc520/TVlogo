@@ -221,8 +221,15 @@
             }
 
             .site-icon.iconify-icon {
-                font-size: 30px;
-                line-height: 40px;
+                width: 40px !important;
+                height: 40px !important;
+                min-width: 40px;
+                font-size: 24px;
+            }
+
+            .site-icon.iconify-icon svg {
+                width: 24px;
+                height: 24px;
             }
         }
 
@@ -263,13 +270,22 @@
         }
 
         .site-icon.iconify-icon {
-            font-size: 36px;
-            line-height: 48px;
-            background: transparent;
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px;
+            font-size: 28px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
             padding: 0;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* iconify-icon 内部 SVG 继承尺寸 */
+        .site-icon.iconify-icon svg {
+            width: 28px;
+            height: 28px;
         }
 
         .site-card:hover .site-icon {
@@ -560,9 +576,9 @@
                 category: "工具",
                 description: "PDF工具"
             },
-            {
+			{
                 name: "IP面板",
-                url: "https://panel.527200.xyz/",
+                url: "https://panel.527200.xyz",
                 icon: "eos-icons:ip-outlined",
                 category: "IPTV",
                 description: "IP节点选择"
@@ -576,7 +592,7 @@
             },
 			{
                 name: "TXT-M3U-M3U8互转",
-                url: "https://nav.sdyun.eu.org/tools/m3u_to_txt.html",
+                url: "https://nav.sdyun.eu.org/tools/TXT-M3U-M3U8.html",
                 icon: "https://nav.sdyun.eu.org/logo/m3u.png",
                 category: "工具",
                 description: ""
