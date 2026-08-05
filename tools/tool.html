@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>网页快捷方式生成器</title>
+    <title>导航快捷方式生成器</title>
+    <!-- Iconify 图标库（异步加载，不阻塞渲染） -->
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js" async></script>
     <style>
         * {
             margin: 0;
@@ -110,6 +112,14 @@
 
         .btn-fetch-icon.loading svg {
             animation: spin 1s linear infinite;
+        }
+
+        .btn-icon-site {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        }
+
+        .btn-icon-site:hover {
+            box-shadow: 0 6px 15px -3px rgba(99, 102, 241, 0.4);
         }
 
         @keyframes spin {
@@ -355,6 +365,16 @@
             padding: 6px;
         }
 
+        iconify-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        iconify-icon.icon-preview {
+            font-size: 30px;
+        }
+
         .preview-row {
             display: flex;
             align-items: center;
@@ -446,7 +466,7 @@
             <div class="form-group">
                 <label>图标地址</label>
                 <div class="icon-input-wrapper">
-                    <input type="url" id="icon" placeholder="https://example.com/favicon.ico">
+                    <input type="url" id="icon" placeholder="图片URL 或 Iconify 图标名(如 mdi:home)">
                     <button type="button" class="btn-fetch-icon" onclick="fetchFavicon()" id="fetchIconBtn" title="从网址获取图标">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"/>
@@ -455,6 +475,14 @@
                         </svg>
                         <span>获取图标</span>
                     </button>
+                    <button type="button" class="btn-fetch-icon btn-icon-site" onclick="openIconSite()" title="打开在线图标网站找图标">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                        <span>在线图标</span>
+                    </button>
                 </div>
                 <div style="margin-top: 8px; font-size: 12px; color: #6b7280; display: flex; align-items: center; justify-content: space-between;">
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -462,15 +490,13 @@
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M12 16v-4M12 8h.01"/>
                         </svg>
-                        支持多种图标来源：网站默认图标、国内API、HTML解析
+                        <span>支持图片 URL、API 获取，也可用 <a href="https://icon-sets.iconify.design/" target="_blank" rel="noopener" style="color:#6366f1;text-decoration:none;">Iconify 图标名</a>（如 <code style="background:#f3f4f6;padding:1px 5px;border-radius:4px;">mdi:home</code>）</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <label for="apiStrategy" style="font-size: 11px;">策略：</label>
                         <select id="apiStrategy" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; border: 1px solid #d1d5db; background: white;">
-                            <option value="auto">自动优选</option>
-                            <option value="domestic">国内优先</option>
-                            <option value="direct">直接网站</option>
-                            <option value="all">全部尝试</option>
+                            <option value="domestic">国内API优先</option>
+                            <option value="direct">仅网站直连</option>
                         </select>
                     </div>
                 </div>
@@ -501,6 +527,7 @@
         <div class="preview-row" id="previewRow">
             <div style="position: relative;">
                 <img src="" alt="icon" class="icon-preview" id="previewIcon">
+                <iconify-icon id="previewIconify" class="icon-preview" style="display:none;"></iconify-icon>
                 <button type="button" onclick="refreshIconPreview()" id="refreshIconBtn" style="position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; background: #6366f1; color: white; border: none; border-radius: 50%; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: all 0.2s ease;" title="刷新图标">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -556,6 +583,90 @@
         let generatedCode = '';
         let lineCode = '';
 
+        // 判断是否为 Iconify 图标（格式如 mdi:home, logos:google 等）
+        function isIconifyIcon(icon) {
+            return /^[a-z0-9-]+:[a-z0-9-]+$/i.test(icon.trim());
+        }
+
+        // 判断图标来源（用于预览标签）
+        function detectIconSource(icon) {
+            if (icon.startsWith('data:image')) return '本地占位';
+            if (icon.includes('favicon.im')) return 'Favicon.im';
+            if (icon.includes('favicon.shuax.com')) return '国内图标API';
+            if (icon.includes('/favicon.ico') || icon.includes('/favicon.png')) return '网站默认';
+            if (icon.includes('apple-touch-icon')) return 'Apple图标';
+            if (icon.includes('logo.png') || icon.includes('logo.svg')) return '网站Logo';
+            return '自定义图标';
+        }
+
+        // 本地生成占位图标（离线可用，不依赖外网）
+        function makePlaceholder(text) {
+            const letter = (text.trim()[0] || '?').toUpperCase();
+            const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='#667eea'/><text x='50' y='52' font-size='56' font-family='sans-serif' font-weight='bold' fill='#fff' text-anchor='middle' dominant-baseline='central'>${letter}</text></svg>`;
+            return 'data:image/svg+xml,' + encodeURIComponent(svg);
+        }
+
+        // 并行为候选图标竞速，谁先加载成功用谁（提速关键）
+        function raceImages(urls) {
+            return new Promise((resolve) => {
+                if (!urls.length) return resolve(null);
+                let pending = urls.length;
+                let done = false;
+                urls.forEach(u => {
+                    checkImageUrl(u).then(ok => {
+                        pending--;
+                        if (!done && ok) {
+                            done = true;
+                            resolve(u);
+                        } else if (pending === 0 && !done) {
+                            resolve(null);
+                        }
+                    });
+                });
+            });
+        }
+
+        // 实时更新图标预览（边输入边看）
+        function updateLivePreview() {
+            const name = document.getElementById('name').value.trim();
+            const url = document.getElementById('url').value.trim();
+            const icon = document.getElementById('icon').value.trim();
+            const category = document.getElementById('category').value.trim();
+            const previewRow = document.getElementById('previewRow');
+
+            document.getElementById('previewName').textContent = name || '网站名称';
+            document.getElementById('previewUrl').textContent = url || 'https://example.com';
+            document.getElementById('previewCategory').textContent = category || '未分类';
+
+            const previewIcon = document.getElementById('previewIcon');
+            const previewIconify = document.getElementById('previewIconify');
+            const iconSource = document.getElementById('iconSource');
+
+            previewRow.classList.add('show');
+            if (icon) {
+                if (isIconifyIcon(icon)) {
+                    previewIcon.style.display = 'none';
+                    previewIconify.style.display = 'inline-flex';
+                    previewIconify.setAttribute('icon', icon);
+                    iconSource.textContent = 'Iconify 图标库';
+                } else {
+                    previewIconify.style.display = 'none';
+                    previewIcon.style.display = 'block';
+                    previewIcon.src = icon;
+                    iconSource.textContent = detectIconSource(icon);
+                }
+            } else {
+                previewIcon.style.display = 'none';
+                previewIconify.style.display = 'none';
+                iconSource.textContent = '';
+            }
+        }
+
+        // 打开在线图标网站
+        function openIconSite() {
+            window.open('https://icon-sets.iconify.design/', '_blank', 'noopener');
+        }
+
         document.getElementById('linkForm').addEventListener('submit', function(e) {
             e.preventDefault();
             generateCode();
@@ -581,6 +692,11 @@
                     }
                 }, 500);
             }
+        });
+
+        // 名称/网址/分类/图标变化时实时预览
+        ['name', 'url', 'category', 'icon'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateLivePreview);
         });
 
         function generateCode() {
@@ -617,39 +733,24 @@
             document.getElementById('previewCategory').textContent = category || '未分类';
 
             const previewIcon = document.getElementById('previewIcon');
+            const previewIconify = document.getElementById('previewIconify');
             const iconSource = document.getElementById('iconSource');
             if (icon) {
-                previewIcon.src = icon;
-                previewIcon.style.display = 'block';
                 previewRow.classList.add('show');
-                
-                // 判断图标来源并显示
-                let sourceText = '自动获取';
-                const strategy = document.getElementById('apiStrategy').value;
-                const strategyText = strategy === 'domestic' ? '[国内优先]' : 
-                                   strategy === 'direct' ? '[网站直连]' : 
-                                   strategy === 'all' ? '[全部尝试]' : 
-                                   '[自动优选]';
-                
-                if (icon.includes('faviconkit.com')) sourceText = `FaviconKit API ${strategyText}`;
-                else if (icon.includes('favicon.im')) sourceText = `Favicon.im API ${strategyText}`;
-                else if (icon.includes('favicon.shuax.com')) sourceText = `国内图标API ${strategyText}`;
-                else if (icon.includes('api.statvoo.com')) sourceText = `Statvoo API ${strategyText}`;
-                else if (icon.includes('duckduckgo.com')) sourceText = `DuckDuckGo API ${strategyText}`;
-                else if (icon.includes('getfavicon.appspot.com')) sourceText = `备用API ${strategyText}`;
-                else if (icon.includes('logo.clearbit.com')) sourceText = `Clearbit API ${strategyText}`;
-                else if (icon.includes('api.zhihu.com')) sourceText = `知乎API ${strategyText}`;
-                else if (icon.includes('api.tianapi.com')) sourceText = `天行API ${strategyText}`;
-                else if (icon.includes('favicons.githubusercontent.com')) sourceText = `GitHub图标 ${strategyText}`;
-                else if (icon.includes('favicon.yandex.net')) sourceText = `Yandex API ${strategyText}`;
-                else if (icon.includes('ui-avatars.com')) sourceText = `占位图标 ${strategyText}`;
-                else if (icon.includes('/favicon.ico')) sourceText = `网站默认 ${strategyText}`;
-                else if (icon.includes('apple-touch-icon')) sourceText = `Apple图标 ${strategyText}`;
-                else if (icon.includes('logo.png') || icon.includes('logo.svg')) sourceText = `网站Logo ${strategyText}`;
-                
-                iconSource.textContent = sourceText;
+                if (isIconifyIcon(icon)) {
+                    previewIcon.style.display = 'none';
+                    previewIconify.style.display = 'inline-flex';
+                    previewIconify.setAttribute('icon', icon);
+                    iconSource.textContent = 'Iconify 图标库';
+                } else {
+                    previewIconify.style.display = 'none';
+                    previewIcon.style.display = 'block';
+                    previewIcon.src = icon;
+                    iconSource.textContent = detectIconSource(icon);
+                }
             } else {
                 previewIcon.style.display = 'none';
+                previewIconify.style.display = 'none';
                 previewRow.classList.remove('show');
                 iconSource.textContent = '';
             }
@@ -713,11 +814,16 @@
         function refreshIconPreview() {
             const iconUrl = document.getElementById('icon').value.trim();
             const previewIcon = document.getElementById('previewIcon');
-            
+            const previewIconify = document.getElementById('previewIconify');
+
             if (iconUrl) {
-                previewIcon.src = '';
-                // 添加时间戳避免缓存
-                previewIcon.src = iconUrl + (iconUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+                if (isIconifyIcon(iconUrl)) {
+                    previewIconify.setAttribute('icon', iconUrl);
+                } else {
+                    previewIcon.src = '';
+                    // 添加时间戳避免缓存
+                    previewIcon.src = iconUrl + (iconUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+                }
                 showToast('图标已刷新', '#6366f1');
             }
         }
@@ -729,6 +835,13 @@
 
             if (!urlInput) {
                 showToast('请先填写网站地址', '#ef4444');
+                return;
+            }
+
+            // 如果图标字段已是 Iconify 图标名，无需获取
+            const currentIcon = document.getElementById('icon').value.trim();
+            if (isIconifyIcon(currentIcon)) {
+                showToast('当前已是 Iconify 图标名，无需获取', '#6366f1');
                 return;
             }
 
@@ -750,186 +863,37 @@
             fetchBtn.querySelector('span').textContent = '获取中...';
 
             try {
+                const directPaths = ['/favicon.ico', '/favicon.png', '/apple-touch-icon.png', '/icon.png', '/logo.png', '/logo.svg'];
+                const directUrls = directPaths.map(p => origin + p);
+
                 const strategy = document.getElementById('apiStrategy').value;
-                
-                // 根据策略选择API列表
-                let apis = [];
-                
-                if (strategy === 'domestic' || strategy === 'auto') {
-                    // 国内优先策略：优先国内可用API
-                    apis = [
-                        `https://api.faviconkit.com/${domain}/128`,
+                let candidates;
+
+                if (strategy === 'direct') {
+                    // 仅尝试目标站点自身的图标
+                    candidates = directUrls;
+                } else {
+                    // 国内可访问的图标服务 + 站点直连，并行竞速
+                    candidates = [
                         `https://favicon.im/${domain}`,
                         `https://favicon.shuax.com/icon?url=${origin}`,
-                        `https://api.statvoo.com/favicon/?url=${domain}`,
-                        `https://api.zhihu.com/favicon?domain=${domain}`,
-                        `https://api.tianapi.com/favicon/index?domain=${domain}`,
-                    ];
-                } else if (strategy === 'direct') {
-                    // 直接网站策略：优先从网站直接获取
-                    apis = [
-                        `${origin}/favicon.ico`,
-                        `${origin}/favicon.png`,
-                        `${origin}/apple-touch-icon.png`,
-                        `${origin}/apple-touch-icon-precomposed.png`,
-                        `${origin}/icon.png`,
-                        `${origin}/logo.png`,
-                        `${origin}/logo.svg`,
-                    ];
-                } else if (strategy === 'all') {
-                    // 全部尝试策略：包括国内外所有API
-                    apis = [
-                        // 国内API
-                        `https://api.faviconkit.com/${domain}/128`,
-                        `https://favicon.im/${domain}`,
-                        `https://favicon.shuax.com/icon?url=${origin}`,
-                        `https://api.statvoo.com/favicon/?url=${domain}`,
-                        `https://api.zhihu.com/favicon?domain=${domain}`,
-                        `https://api.tianapi.com/favicon/index?domain=${domain}`,
-                        // 国际API
-                        `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-                        `https://getfavicon.appspot.com/${origin}`,
-                        `https://logo.clearbit.com/${domain}?size=128`,
-                        `https://favicons.githubusercontent.com/${domain}`,
-                        `https://favicon.yandex.net/favicon/${domain}`,
-                    ];
-                }
-                
-                // 自动优选策略：智能选择，先国内再国际
-                if (strategy === 'auto') {
-                    apis = [
-                        // 第一阶段：国内API
-                        `https://api.faviconkit.com/${domain}/128`,
-                        `https://favicon.im/${domain}`,
-                        `https://favicon.shuax.com/icon?url=${origin}`,
-                        // 第二阶段：网站直接获取
-                        `${origin}/favicon.ico`,
-                        `${origin}/favicon.png`,
-                        `${origin}/apple-touch-icon.png`,
-                        // 第三阶段：国际备用API
-                        `https://icons.duckduckgo.com/ip3/${domain}.ico`,
-                        `https://logo.clearbit.com/${domain}?size=128`,
+                        ...directUrls
                     ];
                 }
 
-                let foundIcon = null;
-                
-                // 依次尝试API
-                for (const apiUrl of apis) {
-                    if (await checkImageUrl(apiUrl)) {
-                        foundIcon = apiUrl;
-                        break;
-                    }
-                }
-
-                // 方法2：检查网站的常见图标位置
-                if (!foundIcon) {
-                    const commonPaths = [
-                        '/favicon.ico',
-                        '/favicon.png',
-                        '/favicon.jpg',
-                        '/apple-touch-icon.png',
-                        '/apple-touch-icon-precomposed.png',
-                        '/icon.png',
-                        '/logo.png',
-                        '/logo.svg',
-                    ];
-
-                    for (const path of commonPaths) {
-                        const iconUrl = `${origin}${path}`;
-                        if (await checkImageUrl(iconUrl)) {
-                            foundIcon = iconUrl;
-                            break;
-                        }
-                    }
-                }
-
-                // 方法3：尝试从HTML中解析图标
-                if (!foundIcon) {
-                    try {
-                        const htmlResponse = await fetch(origin, {
-                            method: 'GET',
-                            mode: 'cors',
-                            headers: {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                            }
-                        });
-                        
-                        if (htmlResponse.ok) {
-                            const htmlText = await htmlResponse.text();
-                            const parser = new DOMParser();
-                            const doc = parser.parseFromString(htmlText, 'text/html');
-                            
-                            // 查找所有可能的图标链接
-                            const iconSelectors = [
-                                'link[rel="icon"]',
-                                'link[rel="shortcut icon"]',
-                                'link[rel="apple-touch-icon"]',
-                                'link[rel="apple-touch-icon-precomposed"]',
-                                'link[rel="mask-icon"]',
-                                'link[rel="fluid-icon"]',
-                                'meta[name="msapplication-TileImage"]',
-                                'meta[property="og:image"]',
-                                'meta[name="twitter:image"]',
-                            ];
-
-                            for (const selector of iconSelectors) {
-                                const element = doc.querySelector(selector);
-                                if (element) {
-                                    let href = element.getAttribute('href') || element.getAttribute('content');
-                                    if (href) {
-                                        // 处理相对路径
-                                        if (!href.startsWith('http') && !href.startsWith('//')) {
-                                            if (href.startsWith('/')) {
-                                                href = `${origin}${href}`;
-                                            } else {
-                                                href = `${origin}/${href}`;
-                                            }
-                                        } else if (href.startsWith('//')) {
-                                            href = `https:${href}`;
-                                        }
-                                        
-                                        if (await checkImageUrl(href)) {
-                                            foundIcon = href;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        console.log('HTML解析失败:', e);
-                    }
-                }
-
-                // 方法4：最后备选方案（国内可用）
-                if (!foundIcon) {
-                    // 尝试使用更简单的API（国内可访问）
-                    const backupApis = [
-                        // 国内备用API
-                        `https://api.zhihu.com/favicon?domain=${domain}`,
-                        `https://api.tianapi.com/favicon/index?domain=${domain}`,
-                        // 简单图标服务
-                        `https://favicons.githubusercontent.com/${domain}`,
-                        `https://favicon.yandex.net/favicon/${domain}`,
-                    ];
-
-                    for (const apiUrl of backupApis) {
-                        if (await checkImageUrl(apiUrl)) {
-                            foundIcon = apiUrl;
-                            break;
-                        }
-                    }
-                }
+                const foundIcon = await raceImages(candidates);
 
                 if (foundIcon) {
                     iconInput.value = foundIcon;
                     showToast('图标获取成功！');
                 } else {
-                    // 如果所有方法都失败，使用一个默认的占位符图标
-                    iconInput.value = `https://ui-avatars.com/api/?name=${encodeURIComponent(domain)}&background=667eea&color=fff&size=128&bold=true&font-size=0.5`;
-                    showToast('未找到图标，已使用默认占位符');
+                    // 未找到则用本地生成的占位图标（不依赖外网）
+                    const placeholder = makePlaceholder(domain);
+                    iconInput.value = placeholder;
+                    showToast('未找到图标，已用本地占位', '#6366f1');
                 }
+
+                updateLivePreview();
             } catch (error) {
                 console.error('获取图标失败:', error);
                 showToast('获取图标失败，请手动输入图标地址', '#f97316');
@@ -940,17 +904,16 @@
             }
         }
 
-        // 检查图片URL是否有效（带CORS支持）
+        // 检查图片URL是否能正常加载（带超时）
         function checkImageUrl(url) {
             return new Promise((resolve) => {
                 const img = new Image();
-                img.crossOrigin = 'anonymous';
                 
                 const timeoutId = setTimeout(() => {
                     img.onload = null;
                     img.onerror = null;
                     resolve(false);
-                }, 3000);
+                }, 2500);
                 
                 img.onload = () => {
                     clearTimeout(timeoutId);
