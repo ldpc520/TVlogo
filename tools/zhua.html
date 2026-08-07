@@ -420,6 +420,8 @@
                 <li>输入完整的网站地址（包含 https://）</li>
                 <li>工具会自动分析网页源码查找图标链接</li>
                 <li>支持 PNG、ICO、SVG 等多种格式</li>
+                <li>兼容经过 307/302 重定向跳转到其它主机的网站</li>
+                <li>找不到真实图标时，会自动生成域名首字母占位图标</li>
             </ul>
         </div>
 
@@ -437,6 +439,7 @@
     <script>
         let currentFaviconUrl = '';
         let currentPageUrl = '';
+        let isGeneratedFavicon = false;
         let history = JSON.parse(localStorage.getItem('faviconHistory') || '[]');
 
         function init() {
@@ -481,101 +484,105 @@
         }
 
         async function getFavicon(url) {
-            let faviconUrl = null;
+            const domain = new URL(url).hostname.replace(/^www\./, '');
             const origin = new URL(url).origin;
 
-            // 方案1: 直接尝试 favicon.ico（最可靠，大多数网站都有）
-            faviconUrl = origin + '/favicon.ico';
-            if (await checkUrl(faviconUrl)) {
-                return faviconUrl;
-            }
+            // 方案1: 直接尝试 favicon.ico（多数网站都有，最快）
+            const ico = origin + '/favicon.ico';
+            if (await checkUrl(ico)) return ico;
 
-            // 方案2: 通过 iframe 加载目标页面，然后从 DOM 中提取图标
+            // 方案2: 用 CORS 代理抓取目标页 HTML 并提取真实图标地址
+            // 代理会自动跟随 307/302 重定向，因此能处理 mark.527200.xyz 这类跳转到其它主机的地址
             try {
-                faviconUrl = await getFaviconFromDOM(url);
-                if (faviconUrl) return faviconUrl;
+                const domIcon = await getFaviconFromDOM(url);
+                if (domIcon && await checkUrl(domIcon)) return domIcon;
             } catch (e) {}
 
-            // 方案3: 尝试 apple-touch-icon
-            const appleIcon = origin + '/apple-touch-icon.png';
-            if (await checkUrl(appleIcon)) {
-                return appleIcon;
+            // 方案3: 常见图标路径（浏览器加载图片时会自动跟随重定向到最终主机）
+            const candidates = [
+                '/favicon.svg', '/favicon.png', '/icon.svg', '/icon.png',
+                '/apple-touch-icon.png', '/apple-touch-icon-precomposed.png', '/favicon.gif'
+            ];
+            for (const path of candidates) {
+                const cand = origin + path;
+                if (await checkUrl(cand)) return cand;
             }
 
-            // 方案4: 尝试 apple-touch-icon-precomposed
-            const appleIconPre = origin + '/apple-touch-icon-precomposed.png';
-            if (await checkUrl(appleIconPre)) {
-                return appleIconPre;
-            }
-
-            // 方案5: 尝试 /favicon.png
-            const faviconPng = origin + '/favicon.png';
-            if (await checkUrl(faviconPng)) {
-                return faviconPng;
-            }
-
-            // 方案6: 尝试 Google Favicon API
-            const domain = new URL(url).hostname;
+            // 方案4: 尝试 Google Favicon API
             const googleFavicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-            if (await checkUrl(googleFavicon)) {
-                return googleFavicon;
-            }
+            if (await checkUrl(googleFavicon)) return googleFavicon;
 
-            // 如果都失败了，返回默认的 favicon.ico（即使可能不存在）
-            return origin + '/favicon.ico';
+            // 方案5: 兜底 —— 自动生成域名首字母图标，保证一定有结果
+            return generateFallbackIcon(domain);
         }
 
-        // 通过创建隐藏的 iframe 加载页面，从 DOM 中提取 favicon
+        // 通过 CORS 代理抓取页面 HTML，从中提取 favicon 真实地址
+        // 依次尝试多个代理；能跟随重定向的代理可正确处理 mark.527200.xyz 这类跳转地址
         function getFaviconFromDOM(url) {
-            return new Promise((resolve) => {
-                // 使用 codetabs CORS 代理获取页面内容
-                const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
+            const proxies = [
+                q => `https://api.allorigins.win/raw?url=${encodeURIComponent(q)}`,
+                q => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(q)}`,
+                q => `https://corsproxy.io/?url=${encodeURIComponent(q)}`
+            ];
+            const baseOrigin = new URL(url).origin;
 
-                const timeout = setTimeout(() => {
-                    resolve(null);
-                }, 5000);
+            function tryProxy(i) {
+                return new Promise((resolve) => {
+                    if (i >= proxies.length) return resolve(null);
+                    let settled = false;
+                    const finish = v => { if (!settled) { settled = true; resolve(v); } };
+                    const tryNext = () => { tryProxy(i + 1).then(finish); };
 
-                fetch(proxyUrl)
-                    .then(response => response.text())
-                    .then(html => {
-                        clearTimeout(timeout);
+                    const timeout = setTimeout(tryNext, 6000);
+                    fetch(proxies[i](url))
+                        .then(r => r.text())
+                        .then(html => {
+                            clearTimeout(timeout);
+                            // 代理返回的是重定向页（如 307 Temporary Redirect）而非真实内容
+                            if (!html || /<title>\s*3\d\d/i.test(html)) { tryNext(); return; }
 
-                        // 解析 HTML 查找图标
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const origin = new URL(url).origin;
-
-                        // 按优先级查找图标
-                        const selectors = [
-                            'link[rel="icon"]',
-                            'link[rel="shortcut icon"]',
-                            'link[rel="apple-touch-icon"]',
-                            'link[rel="apple-touch-icon-precomposed"]'
-                        ];
-
-                        for (const selector of selectors) {
-                            const link = doc.querySelector(selector);
-                            if (link && link.href) {
-                                const resolved = resolveUrl(link.href, origin);
-                                resolve(resolved);
-                                return;
+                            const doc = new DOMParser().parseFromString(html, 'text/html');
+                            const selectors = [
+                                'link[rel="icon"]',
+                                'link[rel="shortcut icon"]',
+                                'link[rel="apple-touch-icon"]',
+                                'link[rel="apple-touch-icon-precomposed"]',
+                                'link[rel="mask-icon"]'
+                            ];
+                            for (const sel of selectors) {
+                                const link = doc.querySelector(sel);
+                                if (link && link.href) {
+                                    finish(resolveUrl(link.href, baseOrigin));
+                                    return;
+                                }
                             }
-                        }
+                            const og = doc.querySelector('meta[property="og:image"]');
+                            if (og && og.content) { finish(resolveUrl(og.content, baseOrigin)); return; }
 
-                        // 检查 meta 标签
-                        const ogImage = doc.querySelector('meta[property="og:image"]');
-                        if (ogImage && ogImage.content) {
-                            resolve(resolveUrl(ogImage.content, origin));
-                            return;
-                        }
+                            // 拿到真实页面但没图标，无需再试其它代理
+                            finish(null);
+                        })
+                        .catch(() => { clearTimeout(timeout); tryNext(); });
+                });
+            }
+            return tryProxy(0);
+        }
 
-                        resolve(null);
-                    })
-                    .catch(() => {
-                        clearTimeout(timeout);
-                        resolve(null);
-                    });
-            });
+        // 当无法获取真实图标时，根据域名生成首字母占位图标（SVG data URI）
+        function generateFallbackIcon(domain) {
+            const letter = (domain.charAt(0) || '?').toUpperCase();
+            let hash = 0;
+            for (let i = 0; i < domain.length; i++) {
+                hash = domain.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash) % 360;
+            const svg =
+                `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">` +
+                `<rect width="128" height="128" rx="28" fill="hsl(${hue},62%,48%)"/>` +
+                `<text x="50%" y="50%" dy=".1em" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" ` +
+                `font-size="76" font-weight="700" text-anchor="middle" dominant-baseline="central">${letter}</text>` +
+                `</svg>`;
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
         }
 
         function resolveUrl(href, baseUrl) {
@@ -610,6 +617,7 @@
 
         function showResult(faviconUrl, pageUrl) {
             currentFaviconUrl = faviconUrl;
+            isGeneratedFavicon = faviconUrl.indexOf('data:') === 0;
 
             const img = document.getElementById('faviconImg');
             const preview = document.getElementById('faviconPreview');
@@ -628,7 +636,9 @@
             };
 
             img.src = faviconUrl;
-            document.getElementById('urlDisplay').textContent = faviconUrl;
+            document.getElementById('urlDisplay').textContent = isGeneratedFavicon
+                ? '未找到真实图标，已自动生成占位图标（域名首字母）'
+                : faviconUrl;
             document.getElementById('resultArea').classList.add('show');
         }
 
@@ -649,6 +659,12 @@
         }
 
         function copyUrl() {
+            if (isGeneratedFavicon) {
+                navigator.clipboard.writeText(currentPageUrl).then(() => {
+                    showToast('已复制网站地址');
+                }).catch(() => showToast('复制失败'));
+                return;
+            }
             navigator.clipboard.writeText(currentFaviconUrl).then(() => {
                 showToast('链接已复制到剪贴板');
             }).catch(() => {
@@ -657,14 +673,29 @@
         }
 
         function openUrl() {
+            if (isGeneratedFavicon) {
+                showToast('这是自动生成的占位图标');
+                return;
+            }
             window.open(currentFaviconUrl, '_blank');
         }
 
         function downloadImg() {
+            if (isGeneratedFavicon) {
+                const a = document.createElement('a');
+                a.href = currentFaviconUrl;
+                a.download = 'favicon.svg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast('正在下载生成的图标...');
+                return;
+            }
+            const ext = (currentFaviconUrl.match(/\.(\w+)(\?|$)/) || [,'ico'])[1] || 'ico';
             showToast('正在下载...');
             const a = document.createElement('a');
             a.href = currentFaviconUrl;
-            a.download = 'favicon.ico';
+            a.download = 'favicon.' + ext;
             a.target = '_blank';
             document.body.appendChild(a);
             a.click();
