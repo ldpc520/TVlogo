@@ -596,6 +596,7 @@
             if (icon.includes('/favicon.ico') || icon.includes('/favicon.png')) return '网站默认';
             if (icon.includes('apple-touch-icon')) return 'Apple图标';
             if (icon.includes('logo.png') || icon.includes('logo.svg')) return '网站Logo';
+            if (icon.includes('/favicon.svg') || icon.includes('/icon.svg')) return '网站SVG图标';
             return '自定义图标';
         }
 
@@ -828,6 +829,65 @@
             }
         }
 
+        // 通过 CORS 代理抓取页面 HTML，从中提取 favicon 真实地址
+        // 依次尝试多个代理；能跟随重定向的代理可正确处理 mark.527200.xyz 这类跳转到其它主机的地址
+        function getFaviconFromDOM(url, baseOrigin) {
+            const proxies = [
+                q => `https://api.allorigins.win/raw?url=${encodeURIComponent(q)}`,
+                q => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(q)}`,
+                q => `https://corsproxy.io/?url=${encodeURIComponent(q)}`
+            ];
+
+            function tryProxy(i) {
+                return new Promise((resolve) => {
+                    if (i >= proxies.length) return resolve(null);
+                    let settled = false;
+                    const finish = v => { if (!settled) { settled = true; resolve(v); } };
+                    const tryNext = () => { tryProxy(i + 1).then(finish); };
+
+                    const timeout = setTimeout(tryNext, 6000);
+                    fetch(proxies[i](url))
+                        .then(r => r.text())
+                        .then(html => {
+                            clearTimeout(timeout);
+                            // 代理返回的是重定向页（如 307 Temporary Redirect）而非真实内容
+                            if (!html || /<title>\s*3\d\d/i.test(html)) { tryNext(); return; }
+
+                            const doc = new DOMParser().parseFromString(html, 'text/html');
+                            const selectors = [
+                                'link[rel="icon"]',
+                                'link[rel="shortcut icon"]',
+                                'link[rel="apple-touch-icon"]',
+                                'link[rel="apple-touch-icon-precomposed"]',
+                                'link[rel="mask-icon"]'
+                            ];
+                            for (const sel of selectors) {
+                                const link = doc.querySelector(sel);
+                                if (link && link.href) {
+                                    finish(resolveUrl(link.href, baseOrigin));
+                                    return;
+                                }
+                            }
+                            const og = doc.querySelector('meta[property="og:image"]');
+                            if (og && og.content) { finish(resolveUrl(og.content, baseOrigin)); return; }
+
+                            // 拿到真实页面但没图标，无需再试其它代理
+                            finish(null);
+                        })
+                        .catch(() => { clearTimeout(timeout); tryNext(); });
+                });
+            }
+            return tryProxy(0);
+        }
+
+        function resolveUrl(href, baseUrl) {
+            if (!href) return null;
+            if (href.startsWith('//')) return 'https:' + href;
+            if (href.startsWith('/')) return baseUrl + href;
+            if (href.startsWith('http://') || href.startsWith('https://')) return href;
+            return baseUrl + '/' + href;
+        }
+
         async function fetchFavicon() {
             const urlInput = document.getElementById('url').value.trim();
             const iconInput = document.getElementById('icon');
@@ -863,20 +923,29 @@
             fetchBtn.querySelector('span').textContent = '获取中...';
 
             try {
-                const directPaths = ['/favicon.ico', '/favicon.png', '/apple-touch-icon.png', '/icon.png', '/logo.png', '/logo.svg'];
+                // 先尝试从目标页 HTML 中提取真实图标地址
+                // 代理会跟随 307/302 重定向到其它主机，因此能处理 mark.527200.xyz 这类跳转地址
+                let domIcon = null;
+                try {
+                    domIcon = await getFaviconFromDOM(urlInput.startsWith('http') ? urlInput : 'https://' + urlInput, origin);
+                } catch (e) {}
+
+                const directPaths = ['/favicon.ico', '/favicon.svg', '/favicon.png', '/icon.svg', '/icon.png', '/apple-touch-icon.png', '/logo.png', '/logo.svg'];
                 const directUrls = directPaths.map(p => origin + p);
+                const domCandidates = domIcon ? [domIcon] : [];
 
                 const strategy = document.getElementById('apiStrategy').value;
                 let candidates;
 
                 if (strategy === 'direct') {
                     // 仅尝试目标站点自身的图标
-                    candidates = directUrls;
+                    candidates = [...domCandidates, ...directUrls];
                 } else {
-                    // 国内可访问的图标服务 + 站点直连，并行竞速
+                    // 国内可访问的图标服务 + DOM 提取 + 站点直连，并行竞速
                     candidates = [
                         `https://favicon.im/${domain}`,
                         `https://favicon.shuax.com/icon?url=${origin}`,
+                        ...domCandidates,
                         ...directUrls
                     ];
                 }
