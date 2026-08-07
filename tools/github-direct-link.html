@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub 直链转换工具</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --accent-2: #3fb950;
+    --danger: #f85149;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 28px 16px 60px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  textarea {
+    width: 100%;
+    min-height: 130px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 12px;
+    font-family: "SF Mono", Consolas, "Courier New", monospace;
+    font-size: 13px;
+    resize: vertical;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+  .proxy-line { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .proxy-line label { margin: 0; }
+  select {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; outline: none; cursor: pointer;
+  }
+  select:focus { border-color: var(--accent); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  button {
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  button:hover { opacity: .85; }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  button.ghost:hover { border-color: var(--accent); }
+  .hint { color: var(--muted); font-size: 12px; }
+  .err { color: var(--danger); font-size: 13px; margin-top: 10px; display: none; }
+  .group { margin-bottom: 22px; }
+  .group-head {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 600; margin-bottom: 12px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .group-head .idx {
+    background: var(--accent); color: #0d1117;
+    width: 22px; height: 22px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .src { font-family: monospace; font-size: 12px; color: var(--muted); word-break: break-all; margin-bottom: 12px; }
+  .item {
+    display: flex; align-items: stretch; gap: 0;
+    border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 8px; overflow: hidden; background: var(--panel-2);
+  }
+  .item .tag {
+    background: var(--accent-2); color: #0d1117;
+    padding: 10px 12px; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; min-width: 96px; justify-content: center;
+  }
+  .item .link {
+    flex: 1; padding: 10px 12px; font-family: monospace;
+    font-size: 12.5px; word-break: break-all; color: var(--text);
+    display: flex; align-items: center;
+  }
+  .item .copy {
+    background: transparent; color: var(--accent); border: none;
+    border-left: 1px solid var(--border); border-radius: 0;
+    padding: 0 14px; font-weight: 500; font-size: 12px;
+  }
+  .item .copy:hover { background: rgba(88,166,255,.1); opacity: 1; }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 30px 0; }
+  footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 10px; }
+  code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>GitHub 直链转换工具</h1>
+  <div class="sub">把 <code>github.com/.../blob/...</code> 文件页链接转成可直接访问/下载的直链。支持批量（每行一个）。</div>
+
+  <div class="card">
+    <label for="input">粘贴 GitHub 链接（支持多行批量）</label>
+    <textarea id="input" placeholder="https://github.com/owner/repo/blob/main/path/to/file.js&#10;https://github.com/owner/repo/blob/master/src/index.js"></textarea>
+    <div class="proxy-line">
+      <label for="proxy">加速代理（可选）</label>
+      <select id="proxy">
+        <option value="">不使用</option>
+        <option value="https://github.sdjy.eu.org">github.sdjy.eu.org</option>
+        <option value="https://gh-proxy.org">gh-proxy.org</option>
+        <option value="https://hk.gh-proxy.org">hk.gh-proxy.org</option>
+        <option value="https://cdn.gh-proxy.org">cdn.gh-proxy.org</option>
+        <option value="https://edgeone.gh-proxy.org">edgeone.gh-proxy.org</option>
+      </select>
+    </div>
+    <div class="row">
+      <button id="convert">转换</button>
+      <button id="clear" class="ghost">清空</button>
+      <button id="copyAll" class="ghost">复制全部</button>
+      <span class="hint" id="hint">实时转换中…</span>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="card">
+    <div id="results"></div>
+    <div class="empty" id="empty">转换结果会显示在这里 👆</div>
+  </div>
+
+  <footer>
+    支持格式：<code>blob</code> / <code>raw</code> 链接，分支名默认取第一段（main / master 等）。
+    若分支含斜杠（如 <code>feature/x</code>），请手动校正分支名。
+    选择加速代理后，仅对 GitHub 原生直链（Raw / GitHub）加前缀；不选则不加。
+    Statically / GitHack 已实测不可达，已移除。
+  </footer>
+</div>
+
+<script>
+  const KNOWN_BRANCHES = ['main','master','dev','develop','release','gh-pages','trunk','HEAD','next','stable'];
+
+  function parseGitHubUrl(raw) {
+    let url = raw.trim();
+    if (!url) return null;
+    // strip query & hash
+    url = url.split('#')[0].split('?')[0];
+    // already a raw.githubusercontent link
+    let m = url.match(/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/([^\/]+)\/(.+)/);
+    if (m) {
+      return { owner: m[1], repo: m[2], branch: m[3], filePath: m[4], raw: true };
+    }
+    // github.com blob/raw
+    m = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/(?:blob|raw)\/(.+)/);
+    if (m) {
+      const owner = m[1], repo = m[2];
+      const rest = m[3].split('/');
+      let branch, filePath;
+      if (KNOWN_BRANCHES.includes(rest[0])) {
+        branch = rest[0];
+        filePath = rest.slice(1).join('/');
+      } else {
+        branch = rest[0];
+        filePath = rest.slice(1).join('/');
+      }
+      return { owner, repo, branch, filePath };
+    }
+    // also accept owner/repo/branch/path plain form
+    m = url.match(/^([^\/\s]+)\/([^\/\s]+)\/([^\/\s]+)\/(.+)$/);
+    if (m) {
+      return { owner: m[1], repo: m[2], branch: m[3], filePath: m[4] };
+    }
+    return null;
+  }
+
+  function buildLinks(p, proxy) {
+    const { owner, repo, branch, filePath } = p;
+    const links = [
+      { tag: 'Raw', url: `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filePath}`, github: true },
+      { tag: 'GitHub', url: `https://github.com/${owner}/${repo}/raw/${branch}/${filePath}`, github: true },
+      { tag: 'jsDelivr', url: `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${filePath}`, github: false }
+    ];
+    // 代理仅作用于 GitHub 原生直链（Raw / GitHub），CDN 类直链本身已加速，不加代理
+    if (proxy) {
+      links.forEach(it => { if (it.github) it.url = proxy + '/' + it.url; });
+    }
+    return links;
+  }
+
+  const input = document.getElementById('input');
+  const results = document.getElementById('results');
+  const empty = document.getElementById('empty');
+  const errBox = document.getElementById('err');
+
+  function render() {
+    const lines = input.value.split('\n').map(l => l.trim()).filter(Boolean);
+    const proxy = document.getElementById('proxy').value;
+    results.innerHTML = '';
+    errBox.style.display = 'none';
+    if (lines.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    let anyOk = false;
+    lines.forEach((line, i) => {
+      const parsed = parseGitHubUrl(line);
+      const group = document.createElement('div');
+      group.className = 'group';
+      const head = document.createElement('div');
+      head.className = 'group-head';
+      head.innerHTML = `<span class="idx">${i + 1}</span><span>${parsed ? `${parsed.owner}/${parsed.repo}` : '无法识别'}</span>`;
+      group.appendChild(head);
+
+      if (!parsed) {
+        const bad = document.createElement('div');
+        bad.className = 'src';
+        bad.style.color = 'var(--danger)';
+        bad.textContent = '✗ ' + line + ' （不是有效的 GitHub 链接）';
+        group.appendChild(bad);
+        results.appendChild(group);
+        return;
+      }
+      anyOk = true;
+      const src = document.createElement('div');
+      src.className = 'src';
+      src.textContent = '源: ' + line;
+      group.appendChild(src);
+
+      buildLinks(parsed, proxy).forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'item';
+        row.innerHTML = `<div class="tag">${item.tag}</div><div class="link">${item.url}</div>`;
+        const btn = document.createElement('button');
+        btn.className = 'copy';
+        btn.textContent = '复制';
+        btn.addEventListener('click', () => copyText(item.url, btn));
+        row.appendChild(btn);
+        group.appendChild(row);
+      });
+      results.appendChild(group);
+    });
+    if (!anyOk) {
+      errBox.textContent = '没有识别到有效的 GitHub 链接，请检查输入格式。';
+      errBox.style.display = 'block';
+    }
+  }
+
+  function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      const old = btn.textContent;
+      btn.textContent = '已复制 ✓';
+      setTimeout(() => btn.textContent = old, 1200);
+    }).catch(() => {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(ta);
+      btn.textContent = '已复制 ✓';
+      setTimeout(() => btn.textContent = '复制', 1200);
+    });
+  }
+
+  function copyAll() {
+    const links = [...document.querySelectorAll('.item .link')].map(e => e.textContent);
+    if (!links.length) return;
+    copyText(links.join('\n'), document.getElementById('copyAll'));
+  }
+
+  document.getElementById('convert').addEventListener('click', render);
+  document.getElementById('clear').addEventListener('click', () => { input.value=''; render(); });
+  document.getElementById('copyAll').addEventListener('click', copyAll);
+  document.getElementById('proxy').addEventListener('change', render);
+  input.addEventListener('input', render);
+
+  render();
+</script>
+</body>
+</html>
