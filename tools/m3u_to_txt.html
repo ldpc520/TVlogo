@@ -361,7 +361,7 @@
                     <li><strong>M3U/M3U8 → TXT</strong>：将M3U或M3U8格式转换为"频道名称,URL"或"频道名称,URL,分类"的TXT格式，保留 group-title 分类信息</li>
                     <li><strong>TXT → M3U</strong>：将"名称,URL"格式的TXT转换为标准M3U播放列表</li>
                     <li><strong>TXT → M3U8</strong>：将"名称,URL"格式的TXT转换为带扩展信息（含分类 group-title）的M3U8播放列表</li>
-                    <li><strong>TXT → M3U8（logo / 分类）</strong>：默认按频道名自动生成logo；支持"名称,URL,分类"、"名称,URL,logo文件名"、"名称,URL,logo文件名,分类"等多种格式，logo 以 http/https 开头或含图片扩展名时会被识别</li>
+                    <li><strong>TXT → M3U8（logo / 分类）</strong>：默认按频道名自动生成logo；支持"名称,URL,分类"、"名称,URL,logo文件名"、"名称,URL,logo文件名,分类"等多种格式，logo 以 http/https 开头或含图片扩展名时会被识别；同时支持常见的"分类,#genre#"分组声明格式</li>
                     <li>支持批量转换，可同时处理多个频道条目</li>
                     <li>转换完成后可一键复制结果或导出为文件</li>
                     <li><strong>复制功能修复：</strong> 已解决复制失败问题，支持所有现代浏览器</li>
@@ -586,10 +586,19 @@ http://example.com/channel2.m3u8`;
             const result = ['#EXTM3U'];
             // 频道 logo 基础地址
             const logoBase = 'https://github.sdjy.eu.org/https://raw.githubusercontent.com/ldpc520/TVlogo/main/tvlogo';
+            // 记录通过 #genre# 声明的当前分类
+            let currentGroup = '';
             
             for (const line of lines) {
                 const trimmed = line.trim();
                 if (!trimmed) continue;
+                
+                // 处理 #genre# 分组标记行（如：央视,#genre# 或 央视#genre#）
+                if (trimmed.includes('#genre#')) {
+                    const beforeGenre = trimmed.split('#genre#')[0].trim();
+                    currentGroup = beforeGenre.replace(/,\s*$/, '');
+                    continue;
+                }
                 
                 // 支持格式：
                 //   名称,URL
@@ -625,6 +634,11 @@ http://example.com/channel2.m3u8`;
                         // 未检测到 logo，则剩余所有列都视为分类
                         category = candidates.join(',');
                     }
+                }
+                
+                // 如果行内没有分类，则继承最近的 #genre# 分组
+                if (!category && currentGroup) {
+                    category = currentGroup;
                 }
                 
                 // 计算 logo 地址
