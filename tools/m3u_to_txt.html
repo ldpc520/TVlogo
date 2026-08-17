@@ -320,7 +320,7 @@
                 </div>
                 <div class="mode-card" data-mode="txt2m3u8">
                     <h3><i class="fas fa-arrow-right"></i> TXT → M3U8</h3>
-                    <p>将"名称,URL"格式的TXT转换为带扩展信息的M3U8播放列表</p>
+                    <p>将"名称,URL"格式的TXT转换为带扩展信息（含分类 group-title）的M3U8播放列表</p>
                 </div>
             </div>
 
@@ -358,10 +358,10 @@
             <div class="info-panel">
                 <h3><i class="fas fa-info-circle"></i> 使用说明</h3>
                 <ul>
-                    <li><strong>M3U/M3U8 → TXT</strong>：将M3U或M3U8格式转换为"频道名称,URL"的TXT格式</li>
+                    <li><strong>M3U/M3U8 → TXT</strong>：将M3U或M3U8格式转换为"频道名称,URL"或"频道名称,URL,分类"的TXT格式，保留 group-title 分类信息</li>
                     <li><strong>TXT → M3U</strong>：将"名称,URL"格式的TXT转换为标准M3U播放列表</li>
-                    <li><strong>TXT → M3U8</strong>：将"名称,URL"格式的TXT转换为带扩展信息的M3U8播放列表</li>
-                    <li><strong>TXT → M3U8（logo）</strong>：默认按频道名自动生成logo（优先取字母数字部分，如 CCTV-13新闻→CCTV13.png；纯中文名如 民視第一台→民視第一台.png）；也可用"名称,URL,logo文件名"第3列强制指定</li>
+                    <li><strong>TXT → M3U8</strong>：将"名称,URL"格式的TXT转换为带扩展信息（含分类 group-title）的M3U8播放列表</li>
+                    <li><strong>TXT → M3U8（logo / 分类）</strong>：默认按频道名自动生成logo；支持"名称,URL,分类"、"名称,URL,logo文件名"、"名称,URL,logo文件名,分类"等多种格式，logo 以 http/https 开头或含图片扩展名时会被识别</li>
                     <li>支持批量转换，可同时处理多个频道条目</li>
                     <li>转换完成后可一键复制结果或导出为文件</li>
                     <li><strong>复制功能修复：</strong> 已解决复制失败问题，支持所有现代浏览器</li>
@@ -373,12 +373,17 @@
                     group-title="綜合其他",民視第一台<br>
                     http://example.com/channel1.m3u8?proxy=true<br><br>
 
-                    <span class="example-title">转换结果：</span>
-                    民視第一台,http://example.com/channel1.m3u8?proxy=true<br><br>
+                    <span class="example-title">转换结果（保留分类）：</span>
+                    民視第一台,http://example.com/channel1.m3u8?proxy=true,綜合其他<br><br>
 
                     <span class="example-title">TXT → M3U8 自定义 logo 示例：</span>
                     CCTV-13新闻,http://example.com/cctv13.m3u8,CCTV13.png<br>
-                    → tvg-logo="https://github.sdjy.eu.org/https://raw.githubusercontent.com/ldpc520/TVlogo/main/tvlogo/CCTV13.png"
+                    → tvg-logo="https://github.sdjy.eu.org/https://raw.githubusercontent.com/ldpc520/TVlogo/main/tvlogo/CCTV13.png"<br><br>
+
+                    <span class="example-title">TXT → M3U8 带分类示例：</span>
+                    民視第一台,http://example.com/channel1.m3u8,綜合其他<br>
+                    CCTV-13新闻,http://example.com/cctv13.m3u8,CCTV13.png,新聞<br>
+                    → group-title="綜合其他" / group-title="新聞"
                 </div>
             </div>
         </div>
@@ -506,15 +511,26 @@ http://example.com/channel2.m3u8`;
         function m3uToTxt(input) {
             const lines = input.split('\n');
             const result = [];
+            let currentGroup = '';
             
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
                 
+                // 独立的 #EXTGRP 行会作为后续条目的分类
+                if (line.startsWith('#EXTGRP:')) {
+                    currentGroup = line.slice(8).trim();
+                    continue;
+                }
+                
                 if (line.startsWith('#EXTINF')) {
                     // 提取频道名称（最后一个逗号之后的内容）
                     const lastCommaIndex = line.lastIndexOf(',');
                     const name = lastCommaIndex !== -1 ? line.slice(lastCommaIndex + 1).trim() : '未命名频道';
+                    
+                    // 优先从 #EXTINF 的 group-title 属性提取分类，否则使用最近的 #EXTGRP
+                    const groupMatch = line.match(/group-title="([^"]*)"/);
+                    const group = groupMatch ? groupMatch[1] : currentGroup;
                     
                     // 向后查找真正的 URL 行，跳过空行与 #EXTGRP 等属性行
                     let j = i + 1;
@@ -524,7 +540,8 @@ http://example.com/channel2.m3u8`;
                             j++;
                             continue;
                         }
-                        result.push(`${name},${candidate}`);
+                        const entry = group ? `${name},${candidate},${group}` : `${name},${candidate}`;
+                        result.push(entry);
                         i = j; // 跳过已处理的 URL 行
                         break;
                     }
@@ -532,6 +549,11 @@ http://example.com/channel2.m3u8`;
             }
             
             return result.join('\n');
+        }
+        
+        // 判断字段是否为 logo（含图片扩展名或是完整 URL）
+        function isLogoField(field) {
+            return /^https?:\/\//i.test(field) || /\.(png|jpe?g|gif|webp|svg)$/i.test(field);
         }
         
         // TXT 转 M3U
@@ -558,7 +580,7 @@ http://example.com/channel2.m3u8`;
             return result.join('\n');
         }
         
-        // TXT 转 M3U8（带扩展信息，支持可选 logo 列）
+        // TXT 转 M3U8（带扩展信息，支持可选 logo 列与分类）
         function txtToM3u8(input) {
             const lines = input.split('\n');
             const result = ['#EXTM3U'];
@@ -569,17 +591,41 @@ http://example.com/channel2.m3u8`;
                 const trimmed = line.trim();
                 if (!trimmed) continue;
                 
-                // 支持两种格式：
+                // 支持格式：
                 //   名称,URL
-                //   名称,URL,logo文件名（可覆盖自动生成的 logo 名，例如频道名是 CCTV-13新闻 但 logo 是 CCTV13.png）
-                const parts = trimmed.split(',');
+                //   名称,URL,分类
+                //   名称,URL,logo文件名（可覆盖自动生成的 logo 名）
+                //   名称,URL,logo文件名,分类
+                //   名称,URL,分类,logo文件名
+                // logo 检测：以 http/https 开头或含图片扩展名；其余额外列视为分类
+                const parts = trimmed.split(',').map(p => p.trim());
                 if (parts.length < 2) continue;
                 
-                const name = parts[0].trim();
-                const url = parts[1].trim();
-                const logoField = parts.length >= 3 ? parts.slice(2).join(',').trim() : '';
-                
+                const name = parts[0];
+                const url = parts[1];
                 if (!name || !url) continue;
+                
+                let category = '';
+                let logoField = '';
+                
+                if (parts.length === 3) {
+                    const third = parts[2];
+                    if (isLogoField(third)) {
+                        logoField = third;
+                    } else {
+                        category = third;
+                    }
+                } else if (parts.length >= 4) {
+                    const candidates = parts.slice(2);
+                    const logoIndex = candidates.findIndex(isLogoField);
+                    if (logoIndex !== -1) {
+                        logoField = candidates[logoIndex];
+                        category = candidates.filter((_, idx) => idx !== logoIndex).join(',');
+                    } else {
+                        // 未检测到 logo，则剩余所有列都视为分类
+                        category = candidates.join(',');
+                    }
+                }
                 
                 // 计算 logo 地址
                 let logoUrl;
@@ -603,7 +649,8 @@ http://example.com/channel2.m3u8`;
                 }
                 
                 const logoId = name.replace(/\s+/g, '');
-                result.push(`#EXTINF:-1 tvg-id="${logoId}" tvg-name="${name}" tvg-logo="${logoUrl}" group-title="",${name}`);
+                const groupAttr = category ? ` group-title="${category}"` : '';
+                result.push(`#EXTINF:-1 tvg-id="${logoId}" tvg-name="${name}" tvg-logo="${logoUrl}"${groupAttr},${name}`);
                 result.push(url);
             }
             
