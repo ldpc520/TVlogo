@@ -565,11 +565,13 @@ http://example.com/channel2.m3u8`;
                 const trimmed = line.trim();
                 if (!trimmed) continue;
                 
-                const lastComma = trimmed.lastIndexOf(',');
-                if (lastComma === -1) continue;
+                // 名称在前，其后为直播地址。直播地址可能包含逗号（如带查询参数的 IPTV 地址），
+                // 因此按第一个逗号拆分，名称之后的整段都视作 URL，避免把地址内部片段误判。
+                const firstComma = trimmed.indexOf(',');
+                if (firstComma === -1) continue;
                 
-                const name = trimmed.slice(0, lastComma).trim();
-                const url = trimmed.slice(lastComma + 1).trim();
+                const name = trimmed.slice(0, firstComma).trim();
+                const url = trimmed.slice(firstComma + 1).trim();
                 
                 if (name && url) {
                     result.push(`#EXTINF:-1,${name}`);
@@ -606,33 +608,56 @@ http://example.com/channel2.m3u8`;
                 //   名称,URL,logo文件名（可覆盖自动生成的 logo 名）
                 //   名称,URL,logo文件名,分类
                 //   名称,URL,分类,logo文件名
+                // 注意：直播地址本身可能包含逗号（如带查询参数的 IPTV 地址），需特殊处理。
                 // logo 检测：以 http/https 开头或含图片扩展名；其余额外列视为分类
                 const parts = trimmed.split(',').map(p => p.trim());
                 if (parts.length < 2) continue;
                 
                 const name = parts[0];
-                const url = parts[1];
-                if (!name || !url) continue;
                 
+                // 定位 URL 起点：名称之后第一个以 http(s):// 开头的字段；找不到则取第2个字段
+                let urlStartIndex = -1;
+                for (let i = 1; i < parts.length; i++) {
+                    if (/^https?:\/\//i.test(parts[i])) {
+                        urlStartIndex = i;
+                        break;
+                    }
+                }
+                if (urlStartIndex === -1) urlStartIndex = 1;
+                
+                const urlCandidate = parts[urlStartIndex];
+                if (!name || !urlCandidate) continue;
+                
+                // 若 URL 自身已包含查询参数（含 &、=、+），说明地址被逗号拆成了多段，
+                // 其后所有字段都属于 URL 的一部分，不能当作分类/logo
+                const urlHasQuery = /[&=+]/.test(urlCandidate);
+                
+                let url;
                 let category = '';
                 let logoField = '';
                 
-                if (parts.length === 3) {
-                    const third = parts[2];
-                    if (isLogoField(third)) {
-                        logoField = third;
-                    } else {
-                        category = third;
-                    }
-                } else if (parts.length >= 4) {
-                    const candidates = parts.slice(2);
-                    const logoIndex = candidates.findIndex(isLogoField);
-                    if (logoIndex !== -1) {
-                        logoField = candidates[logoIndex];
-                        category = candidates.filter((_, idx) => idx !== logoIndex).join(',');
-                    } else {
-                        // 未检测到 logo，则剩余所有列都视为分类
-                        category = candidates.join(',');
+                if (urlHasQuery) {
+                    url = parts.slice(urlStartIndex).join(',');
+                } else {
+                    // URL 为干净的单一字段，其后为可选的 logo / 分类
+                    url = urlCandidate;
+                    const extras = parts.slice(urlStartIndex + 1);
+                    
+                    if (extras.length === 1) {
+                        if (isLogoField(extras[0])) {
+                            logoField = extras[0];
+                        } else {
+                            category = extras[0];
+                        }
+                    } else if (extras.length >= 2) {
+                        const logoIndex = extras.findIndex(isLogoField);
+                        if (logoIndex !== -1) {
+                            logoField = extras[logoIndex];
+                            category = extras.filter((_, idx) => idx !== logoIndex).join(',');
+                        } else {
+                            // 未检测到 logo，则剩余所有列都视为分类
+                            category = extras.join(',');
+                        }
                     }
                 }
                 
