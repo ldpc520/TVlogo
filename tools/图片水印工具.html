@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片水印工具 - Image Watermark Tool</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -24,7 +23,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
@@ -722,6 +721,30 @@
                 </div>
 
                 <div class="form-group">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
+                        <input type="checkbox" id="tileWatermark" style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;">
+                        <label for="tileWatermark" style="cursor: pointer;">平铺整图（防盗图）</label>
+                    </div>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary);">开启后水印铺满整张图片，位置选择将被忽略</p>
+                    <div id="tileOptions" style="display: none; margin-top: 0.8rem;">
+                        <div class="form-group">
+                            <label>旋转角度</label>
+                            <div class="range-group">
+                                <input type="range" id="watermarkAngle" min="-90" max="90" value="-30">
+                                <span class="range-value" id="watermarkAngleValue">-30°</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>平铺间距</label>
+                            <div class="range-group">
+                                <input type="range" id="tileSpacing" min="0" max="200" value="60">
+                                <span class="range-value" id="tileSpacingValue">60%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label>边距</label>
                     <div class="range-group">
                         <input type="range" id="padding" min="0" max="100" value="20">
@@ -799,6 +822,13 @@
         // Common elements
         const paddingInput = document.getElementById('padding');
         const paddingValue = document.getElementById('paddingValue');
+        const tileWatermark = document.getElementById('tileWatermark');
+        const tileOptions = document.getElementById('tileOptions');
+        const watermarkAngleInput = document.getElementById('watermarkAngle');
+        const watermarkAngleValue = document.getElementById('watermarkAngleValue');
+        const tileSpacingInput = document.getElementById('tileSpacing');
+        const tileSpacingValue = document.getElementById('tileSpacingValue');
+        const positionGrid = document.querySelector('.position-grid');
         const resetBtn = document.getElementById('resetBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const toast = document.getElementById('toast');
@@ -824,6 +854,22 @@
                 position = btn.dataset.pos;
                 drawCanvas();
             });
+        });
+
+        // Tile watermark toggle
+        tileWatermark.addEventListener('change', () => {
+            tileOptions.style.display = tileWatermark.checked ? 'block' : 'none';
+            positionGrid.style.opacity = tileWatermark.checked ? '0.4' : '';
+            positionGrid.style.pointerEvents = tileWatermark.checked ? 'none' : '';
+            drawCanvas();
+        });
+        watermarkAngleInput.addEventListener('input', () => {
+            watermarkAngleValue.textContent = watermarkAngleInput.value + '°';
+            drawCanvas();
+        });
+        tileSpacingInput.addEventListener('input', () => {
+            tileSpacingValue.textContent = tileSpacingInput.value + '%';
+            drawCanvas();
         });
 
         // Upload area click
@@ -923,7 +969,14 @@
             ctx.drawImage(originalImage, 0, 0, previewCanvas.width, previewCanvas.height);
             
             // Draw watermark
-            if (currentTab === 'text') {
+            if (tileWatermark.checked) {
+                // 平铺防盗水印
+                if (currentTab === 'text') {
+                    drawTiledTextWatermark(ctx, previewCanvas.width, previewCanvas.height, 1);
+                } else if (watermarkImage) {
+                    drawTiledImageWatermark(ctx, previewCanvas.width, previewCanvas.height, 1);
+                }
+            } else if (currentTab === 'text') {
                 drawTextWatermark();
             } else if (watermarkImage) {
                 drawImageWatermark();
@@ -938,7 +991,7 @@
             const opacity = parseInt(textOpacityInput.value) / 100;
             const padding = parseInt(paddingInput.value);
             
-            ctx.font = `${fontSize}px Inter, sans-serif`;
+            ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
             ctx.fillStyle = hexToRgba(color, opacity);
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'center';
@@ -952,9 +1005,10 @@
             const canvasHeight = previewCanvas.height;
             
             // Calculate position based on selected position
+            // 左对齐时文字左缘贴 padding，右对齐时文字右缘贴 (canvasWidth - padding)
             switch (position) {
                 case 'top-left':
-                    x = padding + textWidth / 2;
+                    x = padding;
                     y = padding + textHeight / 2;
                     ctx.textAlign = 'left';
                     break;
@@ -963,12 +1017,12 @@
                     y = padding + textHeight / 2;
                     break;
                 case 'top-right':
-                    x = canvasWidth - padding - textWidth / 2;
+                    x = canvasWidth - padding;
                     y = padding + textHeight / 2;
                     ctx.textAlign = 'right';
                     break;
                 case 'center-left':
-                    x = padding + textWidth / 2;
+                    x = padding;
                     y = canvasHeight / 2;
                     ctx.textAlign = 'left';
                     break;
@@ -977,12 +1031,12 @@
                     y = canvasHeight / 2;
                     break;
                 case 'center-right':
-                    x = canvasWidth - padding - textWidth / 2;
+                    x = canvasWidth - padding;
                     y = canvasHeight / 2;
                     ctx.textAlign = 'right';
                     break;
                 case 'bottom-left':
-                    x = padding + textWidth / 2;
+                    x = padding;
                     y = canvasHeight - padding - textHeight / 2;
                     ctx.textAlign = 'left';
                     break;
@@ -991,7 +1045,7 @@
                     y = canvasHeight - padding - textHeight / 2;
                     break;
                 case 'bottom-right':
-                    x = canvasWidth - padding - textWidth / 2;
+                    x = canvasWidth - padding;
                     y = canvasHeight - padding - textHeight / 2;
                     ctx.textAlign = 'right';
                     break;
@@ -1069,11 +1123,85 @@
             ctx.globalAlpha = 1;
         }
 
+        // 平铺文字水印（防盗图）：旋转后以交错网格铺满整图
+        function drawTiledTextWatermark(ctxTarget, canvasW, canvasH, scale) {
+            const text = watermarkTextInput.value || 'Watermark';
+            const fontSize = parseInt(fontSizeInput.value) * scale;
+            const opacity = parseInt(textOpacityInput.value) / 100;
+            const angle = parseInt(watermarkAngleInput.value) * Math.PI / 180;
+            const spacingPct = parseInt(tileSpacingInput.value) / 100;
+            
+            ctxTarget.save();
+            ctxTarget.font = `${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+            ctxTarget.fillStyle = hexToRgba(textColorHex.value, opacity);
+            ctxTarget.textBaseline = 'middle';
+            ctxTarget.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctxTarget.shadowBlur = 4 * scale;
+            ctxTarget.shadowOffsetX = 2 * scale;
+            ctxTarget.shadowOffsetY = 2 * scale;
+            
+            const textWidth = ctxTarget.measureText(text).width;
+            const stepX = Math.max(textWidth * (1 + spacingPct), 1);
+            const stepY = Math.max(fontSize * (1 + spacingPct) * 1.5, 1);
+            const diag = Math.hypot(canvasW, canvasH) / 2;
+            
+            ctxTarget.translate(canvasW / 2, canvasH / 2);
+            ctxTarget.rotate(angle);
+            
+            let row = 0;
+            for (let y = -diag; y <= diag; y += stepY) {
+                const offsetX = (row % 2 === 0) ? 0 : stepX / 2;
+                for (let x = -diag + offsetX; x <= diag; x += stepX) {
+                    ctxTarget.fillText(text, x, y);
+                }
+                row++;
+            }
+            ctxTarget.restore();
+        }
+
+        // 平铺图片水印（防盗图）
+        function drawTiledImageWatermark(ctxTarget, canvasW, canvasH, scale) {
+            const size = parseInt(watermarkSizeInput.value) / 100;
+            const opacity = parseInt(imageOpacityInput.value) / 100;
+            const angle = parseInt(watermarkAngleInput.value) * Math.PI / 180;
+            const spacingPct = parseInt(tileSpacingInput.value) / 100;
+            
+            const wmWidth = canvasW * size;
+            const wmHeight = wmWidth * (watermarkImage.height / watermarkImage.width);
+            const stepX = Math.max(wmWidth * (1 + spacingPct), 1);
+            const stepY = Math.max(wmHeight * (1 + spacingPct) * 1.5, 1);
+            const diag = Math.hypot(canvasW, canvasH) / 2;
+            
+            ctxTarget.save();
+            ctxTarget.globalAlpha = opacity;
+            ctxTarget.translate(canvasW / 2, canvasH / 2);
+            ctxTarget.rotate(angle);
+            
+            let row = 0;
+            for (let y = -diag; y <= diag; y += stepY) {
+                const offsetX = (row % 2 === 0) ? 0 : stepX / 2;
+                for (let x = -diag + offsetX; x <= diag; x += stepX) {
+                    ctxTarget.drawImage(watermarkImage, x, y, wmWidth, wmHeight);
+                }
+                row++;
+            }
+            ctxTarget.restore();
+        }
+
         // Hex to RGBA
         function hexToRgba(hex, alpha) {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
+            let h = String(hex || '').trim().replace(/^#/, '');
+            // 支持 3 位简写：#fff
+            if (h.length === 3) {
+                h = h.split('').map(c => c + c).join('');
+            }
+            // 非法输入回退为黑色，避免生成 NaN 的 rgba 导致渲染失败
+            if (!/^[0-9a-fA-F]{6}$/.test(h)) {
+                h = '000000';
+            }
+            const r = parseInt(h.slice(0, 2), 16);
+            const g = parseInt(h.slice(2, 4), 16);
+            const b = parseInt(h.slice(4, 6), 16);
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
@@ -1135,12 +1263,53 @@
 
         // Reset button
         resetBtn.addEventListener('click', () => {
+            // 重置主图
             if (originalImage) {
                 uploadArea.style.display = 'block';
                 previewContainer.classList.remove('active');
                 originalImage = null;
                 fileInput.value = '';
             }
+            // 重置文字水印设置
+            watermarkTextInput.value = 'Watermark';
+            fontSizeInput.value = 32;
+            fontSizeValue.textContent = '32px';
+            textColorInput.value = '#ffffff';
+            textColorHex.value = '#ffffff';
+            textOpacityInput.value = 70;
+            textOpacityValue.textContent = '70%';
+            // 重置图片水印
+            watermarkImageInput.value = '';
+            watermarkImage = null;
+            watermarkPreviewImg.src = '';
+            watermarkPreview.classList.remove('active');
+            watermarkSizeInput.value = 30;
+            watermarkSizeValue.textContent = '30%';
+            imageOpacityInput.value = 70;
+            imageOpacityValue.textContent = '70%';
+            // 重置公共设置
+            position = 'center';
+            document.querySelectorAll('.position-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.position-btn[data-pos="center"]').classList.add('active');
+            paddingInput.value = 20;
+            paddingValue.textContent = '20px';
+            // 重置平铺设置
+            tileWatermark.checked = false;
+            tileOptions.style.display = 'none';
+            positionGrid.style.opacity = '';
+            positionGrid.style.pointerEvents = '';
+            watermarkAngleInput.value = -30;
+            watermarkAngleValue.textContent = '-30°';
+            tileSpacingInput.value = 60;
+            tileSpacingValue.textContent = '60%';
+            // 切回文字水印页
+            currentTab = 'text';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.tab-btn[data-tab="text"]').classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('textTab').classList.add('active');
+            // 重绘预览（无主图时为空操作）
+            drawCanvas();
         });
 
         // Download button
@@ -1160,14 +1329,21 @@
             downloadCtx.drawImage(originalImage, 0, 0);
             
             // Draw watermark
-            if (currentTab === 'text') {
+            if (tileWatermark.checked) {
+                // 平铺防盗水印
+                if (currentTab === 'text') {
+                    drawTiledTextWatermark(downloadCtx, downloadCanvas.width, downloadCanvas.height, originalImage.width / previewCanvas.width);
+                } else if (watermarkImage) {
+                    drawTiledImageWatermark(downloadCtx, downloadCanvas.width, downloadCanvas.height, originalImage.width / previewCanvas.width);
+                }
+            } else if (currentTab === 'text') {
                 const text = watermarkTextInput.value || 'Watermark';
                 const fontSize = parseInt(fontSizeInput.value) * (originalImage.width / previewCanvas.width);
                 const color = textColorHex.value;
                 const opacity = parseInt(textOpacityInput.value) / 100;
                 const padding = parseInt(paddingInput.value) * (originalImage.width / previewCanvas.width);
                 
-                downloadCtx.font = `${fontSize}px Inter, sans-serif`;
+                downloadCtx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
                 downloadCtx.fillStyle = hexToRgba(color, opacity);
                 downloadCtx.textBaseline = 'middle';
                 downloadCtx.textAlign = 'center';
@@ -1182,7 +1358,7 @@
                 
                 switch (position) {
                     case 'top-left':
-                        x = padding + textWidth / 2;
+                        x = padding;
                         y = padding + textHeight / 2;
                         downloadCtx.textAlign = 'left';
                         break;
@@ -1191,12 +1367,12 @@
                         y = padding + textHeight / 2;
                         break;
                     case 'top-right':
-                        x = canvasWidth - padding - textWidth / 2;
+                        x = canvasWidth - padding;
                         y = padding + textHeight / 2;
                         downloadCtx.textAlign = 'right';
                         break;
                     case 'center-left':
-                        x = padding + textWidth / 2;
+                        x = padding;
                         y = canvasHeight / 2;
                         downloadCtx.textAlign = 'left';
                         break;
@@ -1205,12 +1381,12 @@
                         y = canvasHeight / 2;
                         break;
                     case 'center-right':
-                        x = canvasWidth - padding - textWidth / 2;
+                        x = canvasWidth - padding;
                         y = canvasHeight / 2;
                         downloadCtx.textAlign = 'right';
                         break;
                     case 'bottom-left':
-                        x = padding + textWidth / 2;
+                        x = padding;
                         y = canvasHeight - padding - textHeight / 2;
                         downloadCtx.textAlign = 'left';
                         break;
@@ -1219,7 +1395,7 @@
                         y = canvasHeight - padding - textHeight / 2;
                         break;
                     case 'bottom-right':
-                        x = canvasWidth - padding - textWidth / 2;
+                        x = canvasWidth - padding;
                         y = canvasHeight - padding - textHeight / 2;
                         downloadCtx.textAlign = 'right';
                         break;
