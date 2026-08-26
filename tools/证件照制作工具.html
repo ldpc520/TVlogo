@@ -107,6 +107,19 @@
                 </div>
 
                 <div class="field">
+                    <label class="row between">
+                        <span>智能抠图（纯色背景）</span>
+                        <input type="checkbox" id="removeBg">
+                    </label>
+                    <div class="hint" style="font-size:.72rem;color:var(--text-2);margin-top:.3rem;">关闭时只在原图上叠加新底色，不会修改人像；开启时会去除原纯色背景。</div>
+                </div>
+
+                <div class="field" id="tolWrap" style="display:none;">
+                    <label>抠图容差 <span class="val" id="tolVal">40</span></label>
+                    <input type="range" id="tolerance" min="10" max="100" value="40">
+                </div>
+
+                <div class="field">
                     <label>缩放 <span class="val" id="zoomVal">100%</span></label>
                     <input type="range" id="zoom" min="50" max="200" value="100">
                 </div>
@@ -166,6 +179,8 @@
             offsetX: 0,
             offsetY: 0,
             whiteBorder: true,
+            removeBg: false,
+            tolerance: 40,
         };
 
         const canvas = document.getElementById('previewCanvas');
@@ -229,6 +244,20 @@
         bind('bright', 'bright', 'brightVal');
         bind('contrast', 'contrast', 'contrastVal');
         document.getElementById('whiteBorder').onchange = e => { state.whiteBorder = e.target.checked; render(); };
+
+        const removeCb = document.getElementById('removeBg');
+        const tolWrap = document.getElementById('tolWrap');
+        const tolSlider = document.getElementById('tolerance');
+        removeCb.onchange = e => {
+            state.removeBg = e.target.checked;
+            tolWrap.style.display = state.removeBg ? 'block' : 'none';
+            render();
+        };
+        tolSlider.oninput = e => {
+            state.tolerance = +e.target.value;
+            document.getElementById('tolVal').textContent = state.tolerance;
+            render();
+        };
 
         // 上传
         const fileInput = document.getElementById('fileInput');
@@ -318,8 +347,10 @@
             off.height = Math.round(state.img.height * ratio);
             const octx = off.getContext('2d');
             octx.drawImage(state.img, 0, 0, off.width, off.height);
-            const imgData = removeBg(octx, off.width, off.height, 60);
-            octx.putImageData(imgData, 0, 0);
+            if (state.removeBg) {
+                const imgData = removeBg(octx, off.width, off.height, state.tolerance);
+                octx.putImageData(imgData, 0, 0);
+            }
 
             // 亮度/对比度
             const d = octx.getImageData(0, 0, off.width, off.height);
@@ -374,6 +405,7 @@
             state.zoom = 1; state.bright = 0; state.contrast = 0;
             state.offsetX = 0; state.offsetY = 0;
             state.whiteBorder = true;
+            state.removeBg = false; state.tolerance = 40;
             document.getElementById('zoom').value = 100;
             document.getElementById('bright').value = 0;
             document.getElementById('contrast').value = 0;
@@ -381,6 +413,10 @@
             document.getElementById('brightVal').textContent = '0';
             document.getElementById('contrastVal').textContent = '0';
             document.getElementById('whiteBorder').checked = true;
+            document.getElementById('removeBg').checked = false;
+            document.getElementById('tolWrap').style.display = 'none';
+            document.getElementById('tolerance').value = 40;
+            document.getElementById('tolVal').textContent = '40';
             render();
         };
     </script>
