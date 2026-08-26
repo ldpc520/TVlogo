@@ -435,10 +435,10 @@
                     
                     <div class="option-group">
                         <label class="option-label">背景设置</label>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="addBackground" class="checkbox" checked>
-                            <label for="addBackground">添加圆角背景</label>
-                        </div>
+                        <select id="bgMode" class="select-box">
+                            <option value="rounded">圆角纯色背景</option>
+                            <option value="transparent">透明背景</option>
+                        </select>
                         
                         <div id="backgroundOptions" style="margin-top: 1rem;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -456,6 +456,9 @@
                                 <input type="range" id="bgPadding" class="input-range" min="0" max="50" value="20">
                             </div>
                         </div>
+                        <p id="transparentHint" class="transparent-hint" style="display: none; margin-top: 0.8rem; font-size: 0.85rem; opacity: 0.8;">
+                            透明背景：图标居中并按「内边距」留白，导出为透明 PNG / SVG / ICO（JPG 会填充白色）。
+                        </p>
                     </div>
                     
                     <div class="option-group">
@@ -533,7 +536,9 @@
         const notification = document.getElementById('notification');
         
         // 选项元素
-        const addBackground = document.getElementById('addBackground');
+        const bgMode = document.getElementById('bgMode');
+        const backgroundOptions = document.getElementById('backgroundOptions');
+        const transparentHint = document.getElementById('transparentHint');
         const bgColor = document.getElementById('bgColor');
         const cornerRadius = document.getElementById('cornerRadius');
         const cornerValue = document.getElementById('cornerValue');
@@ -571,7 +576,10 @@
             }
         });
         
-        addBackground.addEventListener('change', updatePreview);
+        bgMode.addEventListener('change', () => {
+            toggleBackgroundOptions();
+            updatePreview();
+        });
         bgColor.addEventListener('input', updatePreview);
         cornerRadius.addEventListener('input', () => {
             cornerValue.textContent = `${cornerRadius.value}px`;
@@ -607,7 +615,20 @@
         paddingValue.textContent = `${bgPadding.value}px`;
         sizeValue.textContent = `${iconSize.value}px`;
         updateActiveSizePreset();
+        toggleBackgroundOptions();
         updatePreview(); // 初始化预览
+        
+        // 是否使用圆角纯色背景
+        function isRoundedBg() {
+            return bgMode.value === 'rounded';
+        }
+        
+        // 根据背景模式显示/隐藏纯色背景相关选项与提示
+        function toggleBackgroundOptions() {
+            const rounded = isRoundedBg();
+            backgroundOptions.style.display = rounded ? 'block' : 'none';
+            transparentHint.style.display = rounded ? 'none' : 'block';
+        }
         
         // 更新激活的尺寸预设
         function updateActiveSizePreset() {
@@ -641,6 +662,11 @@
             reader.readAsDataURL(file);
         }
         
+        // 计算实际内边距（防止内边距超过图标一半导致绘制尺寸为负）
+        function getPad(coreSize) {
+            return Math.min(parseInt(bgPadding.value), Math.floor(coreSize / 2));
+        }
+        
         // 更新预览
         function updatePreview() {
             if (!currentIcon) {
@@ -654,16 +680,23 @@
             
             // 获取用户选择的图标大小
             const iconCoreSize = parseInt(iconSize.value);
+            const pad = getPad(iconCoreSize);
+            // 图标实际绘制尺寸 = 背景尺寸 - 两侧内边距
+            const iconDrawSize = iconCoreSize - 2 * pad;
             
-            // 计算图标显示尺寸（比背景小4px）
-            const iconDisplaySize = iconCoreSize - 4;
+            // 预览按显示区缩放，背景最大 150px、图标按比例缩放
+            const dispBg = Math.min(iconCoreSize, 150);
+            const scale = dispBg / iconCoreSize;
+            const dispIcon = iconDrawSize * scale;
             
-            // 设置预览图标大小
-            previewIcon.style.width = `${Math.min(iconDisplaySize, 120)}px`;
-            previewIcon.style.height = `${Math.min(iconDisplaySize, 120)}px`;
+            // 显示预览图标（覆盖 CSS 中的 80% 限制以精确反映尺寸）
+            previewIcon.style.maxWidth = 'none';
+            previewIcon.style.maxHeight = 'none';
+            previewIcon.style.width = `${dispIcon}px`;
+            previewIcon.style.height = `${dispIcon}px`;
             
             // 更新预览背景样式
-            updatePreviewBackground();
+            updatePreviewBackground(dispBg);
             
             // 显示预览
             previewIcon.src = currentIcon.src;
@@ -676,24 +709,29 @@
         }
         
         // 更新预览背景
-        function updatePreviewBackground() {
-            const iconCoreSize = parseInt(iconSize.value);
-            const displaySize = Math.min(iconCoreSize, 150); // 限制预览显示大小
+        function updatePreviewBackground(dispBg) {
+            dispBg = dispBg || Math.min(parseInt(iconSize.value), 150);
             
-            previewBackground.style.width = `${displaySize}px`;
-            previewBackground.style.height = `${displaySize}px`;
+            previewBackground.style.width = `${dispBg}px`;
+            previewBackground.style.height = `${dispBg}px`;
             previewBackground.style.backgroundColor = bgColor.value;
             previewBackground.style.borderRadius = `${cornerRadius.value}px`;
-            previewBackground.style.display = addBackground.checked ? 'flex' : 'none';
+            previewBackground.style.display = isRoundedBg() ? 'flex' : 'none';
+            // 居中显示在预览框中，与图标对齐
+            previewBackground.style.position = 'absolute';
+            previewBackground.style.top = '50%';
+            previewBackground.style.left = '50%';
+            previewBackground.style.transform = 'translate(-50%, -50%)';
         }
         
         // 更新尺寸信息显示
         function updateSizeInfo() {
             const iconCoreSize = parseInt(iconSize.value);
-            const iconDisplaySize = iconCoreSize - 4;
+            const pad = getPad(iconCoreSize);
+            const drawSize = iconCoreSize - 2 * pad;
             
-            if (addBackground.checked) {
-                sizeInfo.textContent = `尺寸：${iconCoreSize}×${iconCoreSize}（图标：${iconDisplaySize}×${iconDisplaySize}）`;
+            if (isRoundedBg() || drawSize < iconCoreSize) {
+                sizeInfo.textContent = `尺寸：${iconCoreSize}×${iconCoreSize}（图标：${drawSize}×${drawSize}）`;
             } else {
                 sizeInfo.textContent = `尺寸：${iconCoreSize}×${iconCoreSize}`;
             }
@@ -706,86 +744,139 @@
                 return;
             }
             
-            // 创建Canvas进行转换
-            const iconCoreSize = parseInt(iconSize.value);
+            const size = parseInt(iconSize.value);
+            const pad = getPad(size);
+            // 图标实际绘制区域：圆角背景与透明背景均按内边距内缩并居中
+            const drawSize = size - 2 * pad;
+            const drawX = pad;
+            const drawY = pad;
+            const target = targetFormat.value;
+            
+            // ===== SVG：直接生成矢量文件（不走 Canvas） =====
+            if (target === 'svg') {
+                const svgStr = buildSVG(size, drawX, drawY, drawSize);
+                const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+                triggerDownload(blob, `${currentFileName}.svg`);
+                showNotification(`图标转换完成！尺寸: ${size}×${size} (图标: ${drawSize}×${drawSize})`);
+                return;
+            }
+            
+            // ===== 其余格式通过 Canvas 绘制 =====
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
-            // 设置Canvas尺寸为用户选择的图标大小
-            canvas.width = iconCoreSize;
-            canvas.height = iconCoreSize;
+            canvas.width = size;
+            canvas.height = size;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 绘制背景
-            if (addBackground.checked) {
+            // 绘制圆角背景
+            if (isRoundedBg()) {
                 ctx.fillStyle = bgColor.value;
-                const borderRadius = parseInt(cornerRadius.value);
-                
-                // 绘制圆角矩形背景
-                ctx.beginPath();
-                ctx.moveTo(borderRadius, 0);
-                ctx.lineTo(iconCoreSize - borderRadius, 0);
-                ctx.quadraticCurveTo(iconCoreSize, 0, iconCoreSize, borderRadius);
-                ctx.lineTo(iconCoreSize, iconCoreSize - borderRadius);
-                ctx.quadraticCurveTo(iconCoreSize, iconCoreSize, iconCoreSize - borderRadius, iconCoreSize);
-                ctx.lineTo(borderRadius, iconCoreSize);
-                ctx.quadraticCurveTo(0, iconCoreSize, 0, iconCoreSize - borderRadius);
-                ctx.lineTo(0, borderRadius);
-                ctx.quadraticCurveTo(0, 0, borderRadius, 0);
-                ctx.closePath();
+                drawRoundRect(ctx, 0, 0, size, size, parseInt(cornerRadius.value));
                 ctx.fill();
+            } else if (target === 'jpg') {
+                // JPG 不支持透明，透明背景下导出 JPG 时填充白色，避免出现黑底
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, size, size);
             }
             
-            // 计算图标绘制尺寸（比背景小4px）
-            const iconDrawSize = iconCoreSize - 4;
-            // 计算图标绘制位置（居中）
-            const iconDrawX = (iconCoreSize - iconDrawSize) / 2;
-            const iconDrawY = (iconCoreSize - iconDrawSize) / 2;
+            // 绘制图标（居中，按内边距内缩）
+            ctx.drawImage(currentIcon, drawX, drawY, drawSize, drawSize);
             
-            // 绘制图标（居中，比背景小4px）
-            ctx.drawImage(
-                currentIcon,
-                iconDrawX,
-                iconDrawY,
-                iconDrawSize,
-                iconDrawSize
-            );
-            
-            // 转换为目标格式
-            let mimeType;
-            switch(targetFormat.value) {
-                case 'jpg':
-                    mimeType = 'image/jpeg';
-                    break;
-                case 'png':
-                    mimeType = 'image/png';
-                    break;
-                case 'svg':
-                    showNotification('SVG转换需要特殊处理，暂不支持直接转换', 'error');
-                    return;
-                case 'ico':
-                    showNotification('ICO转换需要特殊处理，暂不支持直接转换', 'error');
-                    return;
-                case 'webp':
-                    mimeType = 'image/webp';
-                    break;
-                default:
-                    mimeType = 'image/png';
+            // ===== ICO：将 PNG 数据封装进 ICO 容器 =====
+            if (target === 'ico') {
+                buildICO(canvas, size, (blob) => {
+                    if (!blob) {
+                        showNotification('生成 ICO 失败，请尝试其他格式', 'error');
+                        return;
+                    }
+                    triggerDownload(blob, `${currentFileName}.ico`);
+                    showNotification(`图标转换完成！尺寸: ${size}×${size} (图标: ${drawSize}×${drawSize})`);
+                });
+                return;
             }
             
-            // 创建下载链接
+            // ===== PNG / JPG / WEBP =====
+            let mimeType = 'image/png';
+            if (target === 'jpg') mimeType = 'image/jpeg';
+            else if (target === 'webp') mimeType = 'image/webp';
+            
             canvas.toBlob((blob) => {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.download = `${currentFileName}.${targetFormat.value}`;
-                link.href = url;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                
-                showNotification(`图标转换完成！尺寸: ${iconCoreSize}×${iconCoreSize} (图标: ${iconDrawSize}×${iconDrawSize})`);
+                if (!blob) {
+                    showNotification('当前浏览器不支持该格式，请尝试 PNG', 'error');
+                    return;
+                }
+                triggerDownload(blob, `${currentFileName}.${target}`);
+                showNotification(`图标转换完成！尺寸: ${size}×${size} (图标: ${drawSize}×${drawSize})`);
             }, mimeType, 0.92);
+        }
+        
+        // 绘制圆角矩形路径
+        function drawRoundRect(ctx, x, y, w, h, r) {
+            r = Math.max(0, Math.min(r, w / 2, h / 2));
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+        
+        // 生成 SVG 字符串（背景 + 内嵌原图）
+        function buildSVG(size, drawX, drawY, drawSize) {
+            const radius = parseInt(cornerRadius.value);
+            const src = currentIcon.src; // 原图 data URL，保证 SVG 自包含
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+            if (isRoundedBg()) {
+                svg += `<rect x="0" y="0" width="${size}" height="${size}" rx="${radius}" ry="${radius}" fill="${bgColor.value}"/>`;
+            }
+            svg += `<image x="${drawX}" y="${drawY}" width="${drawSize}" height="${drawSize}" href="${src}" xlink:href="${src}"/>`;
+            svg += `</svg>`;
+            return svg;
+        }
+        
+        // 将 Canvas 的 PNG 数据封装为 ICO 文件（PNG-in-ICO，Windows 全面支持）
+        function buildICO(canvas, size, callback) {
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    callback(null);
+                    return;
+                }
+                blob.arrayBuffer().then((buf) => {
+                    const png = new Uint8Array(buf);
+                    // ICONDIR(6) + ICONDIRENTRY(16) + PNG 数据
+                    const out = new Uint8Array(6 + 16 + png.length);
+                    const dv = new DataView(out.buffer);
+                    // ICONDIR
+                    dv.setUint16(0, 0, true); // 保留字段
+                    dv.setUint16(2, 1, true); // 资源类型：图标
+                    dv.setUint16(4, 1, true); // 图像数量
+                    // ICONDIRENTRY
+                    const e = 6;
+                    out[e] = size >= 256 ? 0 : size;     // 宽度（0 表示 256）
+                    out[e + 1] = size >= 256 ? 0 : size; // 高度
+                    out[e + 2] = 0;                      // 颜色数
+                    out[e + 3] = 0;                      // 保留
+                    dv.setUint16(e + 4, 1, true);        // 颜色平面数
+                    dv.setUint16(e + 6, 32, true);       // 每像素位数
+                    dv.setUint32(e + 8, png.length, true);   // 图像数据字节数
+                    dv.setUint32(e + 12, 22, true);          // 图像数据偏移 (6+16)
+                    out.set(png, 22);
+                    callback(new Blob([out], { type: 'image/x-icon' }));
+                }).catch(() => callback(null));
+            }, 'image/png');
+        }
+        
+        // 统一的下载触发
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
         
         // 重置所有设置
@@ -796,7 +887,7 @@
             previewIcon.style.display = 'none';
             previewPlaceholder.style.display = 'block';
             sizeInfo.style.display = 'block';
-            addBackground.checked = true;
+            bgMode.value = 'rounded';
             bgColor.value = '#3a86ff';
             cornerRadius.value = 10;
             cornerValue.textContent = '10px';
@@ -806,6 +897,7 @@
             sizeValue.textContent = '128px';
             targetFormat.value = 'png';
             updateActiveSizePreset();
+            toggleBackgroundOptions();
             updatePreview();
         }
         
