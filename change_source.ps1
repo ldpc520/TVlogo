@@ -1,12 +1,16 @@
-﻿# 永久更换 pip / npm 镜像源 (中文数字菜单)
+# 永久更换 pip / npm 镜像源 (中文数字菜单)
 # 用法(本机已保存时):  powershell -File change_source.ps1
 # 用法(远程一行):      iex (irm https://你的地址/change_source.ps1)
 # 说明: 写用户级配置，无需管理员权限，重启/重开终端依然生效。
 
-# ---- 中文输出不乱码: 切到 UTF-8 ----
-$OutputEncoding = [System.Text.Encoding]::UTF8
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-try { & cmd /c 'chcp 65001' > $null } catch { }
+# ---- 中文输出不乱码 (关键!) ----
+# PowerShell 5.1 的蓝色 conhost 窗口控制台代码页是 936 (GBK)，
+# 但 [Console]::OutputEncoding 默认却是 UTF-8，两者不一致 -> 乱码。
+# 解决: 把 OutputEncoding 设成系统默认编码 (中文 Windows = GBK)，
+# 让 Write-Host 输出的字节与控制台代码页一致。绝不去改 chcp ，
+# 否则会把蓝色宿主搞坏 (chcp 65001 + conhost 是有名的 PS5.1 兼容坑)。
+$OutputEncoding = [System.Text.Encoding]::Default
+[Console]::OutputEncoding = [System.Text.Encoding]::Default
 
 Write-Host '============================================================'
 Write-Host '          永久更换 pip 与 npm 镜像源  (中文菜单)'
