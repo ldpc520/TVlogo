@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文件内容对比工具</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#21262d; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e;
+    --del:#f85149; --ins:#3fb950; --mod:#38bdf8;
+    --del-bg:rgba(248,81,73,.15); --ins-bg:rgba(63,185,80,.15); --mod-bg:rgba(63,185,80,.18);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,"Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+  header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+  header h1{font-size:18px;margin:0;font-weight:600;}
+  .wrap{padding:16px 20px;max-width:1480px;margin:0 auto;}
+  .inputs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+  .input-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;}
+  .input-box label{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;}
+  textarea{width:100%;height:220px;resize:vertical;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:"SFMono-Regular",Consolas,"Courier New",monospace;font-size:13px;line-height:1.5;white-space:pre;overflow:auto;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;}
+  button{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 14px;cursor:pointer;font-size:13px;transition:.15s;}
+  button:hover{border-color:var(--muted);}
+  button.primary{background:#238636;border-color:#2ea043;color:#fff;}
+  button.primary:hover{background:#2ea043;}
+  .chk{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;cursor:pointer;user-select:none;}
+  .stat{margin-left:auto;display:flex;gap:16px;font-size:13px;}
+  .stat .s-del{color:var(--del);} .stat .s-ins{color:var(--ins);} .stat .s-mod{color:var(--mod);}
+  .stat b{font-weight:600;}
+  .result{border:1px solid var(--border);border-radius:8px;overflow:auto;max-height:72vh;background:var(--panel);}
+  table{border-collapse:collapse;width:100%;font-family:"SFMono-Regular",Consolas,monospace;font-size:13px;}
+  td{border-bottom:1px solid var(--border);padding:1px 10px;vertical-align:top;white-space:pre-wrap;word-break:break-all;line-height:1.55;}
+  .ln{color:var(--muted);text-align:right;width:1%;user-select:none;background:var(--panel2);}
+  .code{width:50%;}
+  .row-del .code-l{background:var(--del-bg);}
+  .row-ins .code-r{background:var(--ins-bg);}
+  .row-mod .code-l,.row-mod .code-r{background:var(--mod-bg);}
+  .ln-del{color:var(--del);} .ln-ins{color:var(--ins);} .ln-mod{color:var(--mod);}
+  .ch-del{background:rgba(56,189,248,.30);color:#e0f2fe;text-decoration:line-through;border-radius:2px;}
+  .ch-ins{background:rgba(56,189,248,.30);color:#e0f2fe;border-radius:2px;}
+  .empty{color:var(--muted);text-align:center;padding:40px;}
+  input[type=file]{font-size:12px;color:var(--muted);max-width:170px;}
+</style>
+</head>
+<body>
+<header><h1>📑 文件内容对比工具</h1></header>
+<div class="wrap">
+  <div class="inputs">
+    <div class="input-box">
+      <label>原始文本 / 文件 A
+        <span style="display:flex;gap:8px;align-items:center;">
+          <input type="file" id="fileA">
+          <button id="swap" title="交换 A/B">⇄ 交换</button>
+        </span>
+      </label>
+      <textarea id="ta" placeholder="在此粘贴文本，或点击上方「选择文件」上传…"></textarea>
+    </div>
+    <div class="input-box">
+      <label>对比文本 / 文件 B <input type="file" id="fileB"></label>
+      <textarea id="tb" placeholder="在此粘贴文本，或点击上方「选择文件」上传…"></textarea>
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="primary" id="cmp">对比差异</button>
+    <button id="clear">清空</button>
+    <label class="chk"><input type="checkbox" id="igws"> 忽略行尾空白</label>
+    <label class="chk"><input type="checkbox" id="onlydiff"> 仅显示差异</label>
+    <div class="stat" id="stat"></div>
+  </div>
+  <div class="result" id="result"><div class="empty">请输入两段文本（或上传文件）后点击「对比差异」</div></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function splitLines(t){return t.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');}
+
+// 行级 LCS 差异（基于用于比较的归一化数组，但显示原始数组）
+function lcs(aNorm,bNorm,aRaw,bRaw){
+  const n=aNorm.length,m=bNorm.length;
+  if(n*m>9000000){ return naiveDiff(aRaw,bRaw); }
+  const dp=Array.from({length:n+1},()=>new Int32Array(m+1));
+  for(let i=n-1;i>=0;i--)
+    for(let j=m-1;j>=0;j--)
+      dp[i][j]=aNorm[i]===bNorm[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const ops=[];let i=0,j=0;
+  while(i<n&&j<m){
+    if(aNorm[i]===bNorm[j]){ops.push({t:'eq',a:i,b:j});i++;j++;}
+    else if(dp[i+1][j]>=dp[i][j+1]){ops.push({t:'del',a:i});i++;}
+    else{ops.push({t:'ins',b:j});j++;}
+  }
+  while(i<n){ops.push({t:'del',a:i});i++;}
+  while(j<m){ops.push({t:'ins',b:j});j++;}
+  return ops;
+}
+function naiveDiff(a,b){
+  const n=a.length,m=b.length,k=Math.min(n,m),ops=[];
+  for(let x=0;x<k;x++){ if(a[x]===b[x]) ops.push({t:'eq',a:x,b:x}); else {ops.push({t:'del',a:x}); ops.push({t:'ins',b:x});} }
+  for(let x=k;x<n;x++) ops.push({t:'del',a:x});
+  for(let x=k;x<m;x++) ops.push({t:'ins',b:x});
+  return ops;
+}
+
+// 合并连续 del/ins 为修改(mod)，用于字符级高亮
+function merge(ops){
+  const out=[];let i=0;
+  while(i<ops.length){
+    const op=ops[i];
+    if(op.t==='eq'){out.push(op);i++;continue;}
+    const dels=[],inss=[];
+    while(i<ops.length&&ops[i].t==='del'){dels.push(ops[i].a);i++;}
+    while(i<ops.length&&ops[i].t==='ins'){inss.push(ops[i].b);i++;}
+    const pairs=Math.max(dels.length,inss.length);
+    for(let k=0;k<pairs;k++){
+      if(k<dels.length&&k<inss.length) out.push({t:'mod',a:dels[k],b:inss[k]});
+      else if(k<dels.length) out.push({t:'del',a:dels[k]});
+      else out.push({t:'ins',b:inss[k]});
+    }
+  }
+  return out;
+}
+
+// 字符级 LCS，用于修改行的行内差异高亮
+function charDiff(a,b){
+  const n=a.length,m=b.length;
+  const dp=Array.from({length:n+1},()=>new Int32Array(m+1));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)
+    dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const ops=[];let i=0,j=0;
+  while(i<n&&j<m){
+    if(a[i]===b[j]){ops.push({t:'eq',c:a[i]});i++;j++;}
+    else if(dp[i+1][j]>=dp[i][j+1]){ops.push({t:'del',c:a[i]});i++;}
+    else{ops.push({t:'ins',c:b[j]});j++;}
+  }
+  while(i<n)ops.push({t:'del',c:a[i++]});
+  while(j<m)ops.push({t:'ins',c:b[j++]});
+  return ops;
+}
+function renderChars(ops,side){
+  let h='';
+  for(const o of ops){
+    const e=escapeHtml(o.c);
+    if(o.t==='eq')h+=e;
+    else if(o.t==='del'&&side==='l')h+='<span class="ch-del">'+e+'</span>';
+    else if(o.t==='ins'&&side==='r')h+='<span class="ch-ins">'+e+'</span>';
+  }
+  return h||'&nbsp;';
+}
+
+function compare(){
+  if($('ta').value.trim()===''&&$('tb').value.trim()===''){
+    $('result').innerHTML='<div class="empty">请输入两段文本后点击「对比差异」</div>';$('stat').innerHTML='';return;
+  }
+  const rawA=splitLines($('ta').value);
+  const rawB=splitLines($('tb').value);
+  let aNorm=rawA,bNorm=rawB;
+  if($('igws').checked){
+    aNorm=rawA.map(l=>l.replace(/^\s+|\s+$/g,''));
+    bNorm=rawB.map(l=>l.replace(/^\s+|\s+$/g,''));
+  }
+  const ops=merge(lcs(aNorm,bNorm,rawA,rawB));
+  let la=0,lb=0,cDel=0,cIns=0,cMod=0;
+  let html='<table>';
+  const onlyDiff=$('onlydiff').checked;
+  for(const op of ops){
+    let lnumA='',lnumB='',cA='',cB='',cls='';
+    if(op.t==='eq'){
+      if(onlyDiff) continue;
+      lnumA=++la;lnumB=++lb;cA=escapeHtml(rawA[op.a]);cB=escapeHtml(rawB[op.b]);
+    }else if(op.t==='del'){
+      lnumA=++la;cA=escapeHtml(rawA[op.a]);cls='row-del';cDel++;
+    }else if(op.t==='ins'){
+      lnumB=++lb;cB=escapeHtml(rawB[op.b]);cls='row-ins';cIns++;
+    }else{
+      lnumA=++la;lnumB=++lb;
+      const cd=charDiff(rawA[op.a],rawB[op.b]);
+      cA=renderChars(cd,'l');cB=renderChars(cd,'r');cls='row-mod';cMod++;
+    }
+    const lncls = cls==='row-del'?'ln-del':cls==='row-ins'?'ln-ins':cls==='row-mod'?'ln-mod':'';
+    html+='<tr class="'+cls+'">'+
+      '<td class="ln '+lncls+'">'+lnumA+'</td>'+
+      '<td class="code code-l">'+(cA||'&nbsp;')+'</td>'+
+      '<td class="code code-r">'+(cB||'&nbsp;')+'</td>'+
+      '<td class="ln '+lncls+'">'+lnumB+'</td>'+
+      '</tr>';
+  }
+  html+='</table>';
+  $('result').innerHTML = (ops.length===0 && rawA.length<=1 && rawB.length<=1) ? '<div class="empty">请输入两段文本后点击「对比差异」</div>' : html;
+  $('stat').innerHTML='<span class="s-del">删除 <b>'+cDel+'</b></span><span class="s-ins">新增 <b>'+cIns+'</b></span><span class="s-mod">修改 <b>'+cMod+'</b></span>';
+}
+
+function bindFile(inputId, taId){
+  $(inputId).addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{$(taId).value=ev.target.result;};
+    r.readAsText(f);
+  });
+}
+bindFile('fileA','ta');
+bindFile('fileB','tb');
+$('cmp').addEventListener('click',compare);
+$('clear').addEventListener('click',()=>{
+  $('ta').value='';$('tb').value='';$('result').innerHTML='<div class="empty">请输入两段文本后点击「对比差异」</div>';$('stat').innerHTML='';
+});
+$('swap').addEventListener('click',()=>{
+  const t=$('ta').value;$('ta').value=$('tb').value;$('tb').value=t;
+});
+</script>
+</body>
+</html>
